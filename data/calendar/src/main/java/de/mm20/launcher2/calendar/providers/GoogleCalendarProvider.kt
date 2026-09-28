@@ -27,6 +27,8 @@ internal class GoogleCalendarProvider(
     private val context: Context,
 ) : CalendarProvider {
 
+    override val namespace: String = NAMESPACE
+
     override suspend fun search(
         query: String?,
         from: Long,
