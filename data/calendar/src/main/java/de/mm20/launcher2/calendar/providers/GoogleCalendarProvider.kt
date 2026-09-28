@@ -321,6 +321,7 @@ internal class GoogleCalendarProvider(
     companion object {
         const val NAMESPACE = "google"
         const val SOURCE_ID = "google"
+        const val GOOGLE_CALENDAR_PACKAGE = GOOGLE_CALENDAR_PACKAGE
         private const val SOURCE_CALENDAR_ID = "source"
 
         private const val GOOGLE_ACCOUNT_TYPE = "com.google"
@@ -329,12 +330,12 @@ internal class GoogleCalendarProvider(
 
         fun isAvailable(context: Context): Boolean {
             return try {
-                context.packageManager.getLaunchIntentForPackage("com.google.android.calendar") != null ||
+                context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR_PACKAGE) != null ||
                     AccountManager.get(context)
                         .getAccountsByType(GOOGLE_ACCOUNT_TYPE)
                         .isNotEmpty()
             } catch (_: SecurityException) {
-                context.packageManager.getLaunchIntentForPackage("com.google.android.calendar") != null
+                context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR_PACKAGE) != null
             }
         }
     }
