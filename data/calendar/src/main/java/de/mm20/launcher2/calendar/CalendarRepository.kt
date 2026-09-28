@@ -104,6 +104,7 @@ internal class CalendarRepositoryImpl(
         excludeCalendars: List<String>,
         excludeCalendarSources: List<String>,
         excludeAllDayEvents: Boolean,
+        onlyGoogleCalendar: Boolean,
     ): Flow<ImmutableList<CalendarEvent>> {
         val hasCalendarPermission = permissionsManager.hasPermission(PermissionGroup.Calendar)
         val hasTasksPermission = permissionsManager.hasPermission(PermissionGroup.Tasks)
