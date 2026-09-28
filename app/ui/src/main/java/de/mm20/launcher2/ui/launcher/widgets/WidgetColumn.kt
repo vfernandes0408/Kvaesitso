@@ -115,9 +115,11 @@ fun WidgetColumn(
                         modifier = Modifier
                             .then(
                                 if (widget is CalendarWidget) {
-                                    Modifier.fillMaxWidth(
-                                        widget.config.widthPercent.coerceIn(30, 100) / 100f
-                                    )
+                                    Modifier
+                                        .fillMaxWidth(
+                                            widget.config.widthPercent.coerceIn(30, 100) / 100f
+                                        )
+                                        .align(Alignment.CenterHorizontally)
                                 } else {
                                     Modifier.fillMaxWidth()
                                 }
