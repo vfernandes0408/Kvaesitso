@@ -224,7 +224,6 @@
     <string name="websearch_dialog_query_encoding_none">None</string>
     <string name="menu_edit_widgets">Edit widgets</string>
     <string name="widget_name_weather">Weather</string>
-    <string name="widget_name_calendar">Calendar</string>
     <string name="widget_name_music">Media</string>
     <string name="widget_name_apps">Apps</string>
     <string name="widget_name_notes">Note</string>
