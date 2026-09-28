@@ -934,7 +934,7 @@ fun ColumnScope.ConfigureCalendarWidget(
             ?: widget.config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList()
     }
     val excludedCalendarSources = remember(widget.config) {
-        widget.config.excludedCalendarSources ?: listOf("google", "android:com.google")
+        widget.config.excludedCalendarSources ?: listOf("google")
     }
 
     val groups = remember(calendars) {
@@ -987,7 +987,7 @@ fun ColumnScope.ConfigureCalendarWidget(
                                         onWidgetUpdated(
                                             widget.copy(
                                                 config = widget.config.copy(
-                                                    excludedCalendarSources = excludedCalendarSources - "google" - "android:com.google"
+                                                    excludedCalendarSources = excludedCalendarSources - "google"
                                                 )
                                             )
                                         )
