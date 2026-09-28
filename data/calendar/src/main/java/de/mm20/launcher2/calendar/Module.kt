@@ -1,8 +1,6 @@
 package de.mm20.launcher2.calendar
 
 import de.mm20.launcher2.calendar.providers.AndroidCalendarEvent
-import de.mm20.launcher2.calendar.providers.GoogleCalendarEvent
-import de.mm20.launcher2.calendar.providers.GoogleCalendarEventDeserializer
 import de.mm20.launcher2.calendar.providers.PluginCalendarEvent
 import de.mm20.launcher2.calendar.providers.TasksCalendarEvent
 import de.mm20.launcher2.search.CalendarEvent
@@ -18,5 +16,4 @@ val calendarModule = module {
     factory<SearchableDeserializer>(named(AndroidCalendarEvent.Domain)) { AndroidCalendarEventDeserializer(androidContext()) }
     factory<SearchableDeserializer>(named(TasksCalendarEvent.Domain)) { TasksCalendarEventDeserializer(androidContext()) }
     factory<SearchableDeserializer>(named(PluginCalendarEvent.Domain)) { PluginCalendarEventDeserializer(androidContext(), get()) }
-    factory<SearchableDeserializer>(named(GoogleCalendarEvent.Domain)) { GoogleCalendarEventDeserializer() }
 }
