@@ -1,8 +1,10 @@
 # Calendar Widget
 
-Display calendar events and appointments for the next seven days. In the widget settings, you can
-choose which calendars to display and how many upcoming events should be shown in the "Next events" section.
-Tap 'Edit widgets', then tap the <span class="material-symbols-rounded">tune</span> icon for the calendar widget.
+Display Google Calendar events in the widget. Tap 'Edit widgets', then tap the
+<span class="material-symbols-rounded">tune</span> icon for the calendar widget.
+
+The widget always uses Google Calendar and does not provide individual calendar selection.
+You can configure the widget width from 30% to 100% of the available width, with 100% as the default.
 The number of upcoming events can be configured from 1 to 10. There is also an option to hide all-day events.
 
 ## My calendars don't show up!
@@ -24,10 +26,8 @@ If your calendar doesn't show up, it is
 likely that your calendar app doesn't participate in this system. For some apps, there are solutions
 or workarounds:
 
-### Outlook
-
-Outlook doesn't sync its calendar data with the Android calendar provider by default. To enable it,
-open the Outlook app, and navigate to its settings. Tap on your account, then enable 'Sync calendar'.
+The calendar widget requires the Google Calendar app to be installed (`com.google.android.calendar`) and uses
+Google Calendar directly. Other calendar providers are not used as event sources for this widget.
 
 ### Proton Calendar
 
