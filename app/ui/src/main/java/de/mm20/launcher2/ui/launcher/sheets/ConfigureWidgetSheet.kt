@@ -868,32 +868,25 @@ fun ColumnScope.ConfigureCalendarWidget(
     onWidgetUpdated: (CalendarWidget) -> Unit
 ) {
     val calendarRepository: CalendarRepository = koinInject()
-    val permissionsManager: PermissionsManager = koinInject()
-    val pluginRepository: PluginRepository = koinInject()
-    val calendars by remember {
-        calendarRepository.getCalendars().map {
-            it.sortedBy { it.name }
-        }
-    }.collectAsState(null)
-    val plugins by remember {
-        pluginRepository.findMany(
-            type = PluginType.Calendar,
-            enabled = true,
-        )
-    }.collectAsState(emptyList())
-
-    val hasPermission by remember {
-        permissionsManager.hasPermission(PermissionGroup.Calendar)
-    }.collectAsState(true)
-
-    val hasTasks = remember(calendars) {
-        calendars?.any { it.types.contains(CalendarListType.Tasks) } == true
-    }
+    val context = LocalContext.current as AppCompatActivity
 
     OutlinedCard {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
+            Preference(
+                title = { Text(stringResource(R.string.calendar_source_google)) },
+                summary = {
+                    Text(stringResource(R.string.calendar_source_widget_summary))
+                },
+                icon = R.drawable.calendar_month_24px,
+                onClick = {
+                    calendarRepository.requestGoogleCalendarAuthorization(context) {
+                        // Authorization is handled by the Google account manager.
+                    }
+                }
+            )
+            HorizontalDivider()
             SliderPreference(
                 title = stringResource(R.string.calendar_widget_upcoming_events_count),
                 iconPadding = false,
@@ -909,185 +902,6 @@ fun ColumnScope.ConfigureCalendarWidget(
                     )
                 }
             )
-        }
-    }
-
-    if (hasTasks) {
-        OutlinedCard {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SwitchPreference(
-                    title = stringResource(R.string.preference_calendar_hide_completed),
-                    iconPadding = false,
-                    value = !widget.config.completedTasks,
-                    onValueChanged = {
-                        onWidgetUpdated(widget.copy(config = widget.config.copy(completedTasks = !it)))
-                    }
-                )
-            }
-        }
-    }
-    val context = LocalLifecycleOwner.current as AppCompatActivity
-    val excludedCalendars = remember(widget.config) {
-        widget.config.excludedCalendarIds
-            ?: widget.config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList()
-    }
-    val excludedCalendarSources = remember(widget.config) {
-        widget.config.excludedCalendarSources ?: listOf("google")
-    }
-
-    val groups = remember(calendars) {
-        calendars?.groupBy { it.sourceId }?.entries
-    }
-
-    if (groups?.isNotEmpty() == true) {
-        for (group in groups) {
-            val sourceName = remember(plugins, group.key) {
-                when {
-                    group.key == "local" ->
-                        context.getString(R.string.preference_calendar_calendars)
-                    group.key == "tasks.org" ->
-                        context.getString(R.string.preference_search_tasks)
-                    group.key == "google" ->
-                        context.getString(R.string.calendar_source_google)
-                    group.key == "android:com.google.android.calendar" ->
-                        context.getString(R.string.calendar_source_google)
-                    group.key.startsWith("android:") ->
-                        group.key.removePrefix("android:")
-                    else ->
-                        plugins.find { it.authority == group.key }?.label ?: group.key
-                }
-            }
-            Text(
-                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.secondary,
-                text = sourceName
-            )
-
-            val calendarIds = remember(group.value) {
-                group.value.map { it.id }
-            }
-            val sourceEnabled = !excludedCalendarSources.contains(group.key)
-
-            OutlinedCard {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    CheckboxPreference(
-                        title = sourceName,
-                        summary = stringResource(R.string.calendar_source_widget_summary),
-                        iconPadding = false,
-                        value = sourceEnabled,
-                        onValueChanged = { enabled ->
-                            if (enabled && group.key == "google") {
-                                calendarRepository.requestGoogleCalendarAuthorization(context) { authorized ->
-                                    if (authorized) {
-                                        onWidgetUpdated(
-                                            widget.copy(
-                                                config = widget.config.copy(
-                                                    excludedCalendarSources = excludedCalendarSources - "google"
-                                                )
-                                            )
-                                        )
-                                    }
-                                }
-                            } else {
-                                onWidgetUpdated(
-                                    widget.copy(
-                                        config = widget.config.copy(
-                                            excludedCalendarSources = if (enabled) {
-                                                excludedCalendarSources - group.key
-                                            } else {
-                                                excludedCalendarSources + group.key
-                                            }
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    )
-                    if (group.value.isNotEmpty()) {
-                        HorizontalDivider()
-                    }
-                    for ((i, calendar) in group.value.withIndex()) {
-                        if (i > 0) HorizontalDivider()
-                        CheckboxPreference(
-                            title = calendar.name,
-                            summary = calendar.owner,
-                            iconPadding = false,
-                            value = sourceEnabled && !excludedCalendars.contains(calendar.id),
-                            enabled = sourceEnabled,
-                            onValueChanged = {
-                                onWidgetUpdated(
-                                    widget.copy(
-                                        config = widget.config.copy(
-                                            excludedCalendarIds = if (it) {
-                                                excludedCalendars - calendar.id
-                                            } else {
-                                                excludedCalendars + calendar.id
-                                            }
-                                        )
-                                    )
-                                )
-                            },
-                            checkboxColors = CheckboxDefaults.colors(
-                                checkedColor = if (calendar.color == 0) MaterialTheme.colorScheme.primary
-                                else Color(
-                                    calendar.color.atTone(if (LocalDarkTheme.current) 80 else 40)
-                                ),
-                                checkmarkColor = if (calendar.color == 0) MaterialTheme.colorScheme.onPrimary
-                                else Color(
-                                    calendar.color.atTone(if (LocalDarkTheme.current) 20 else 100)
-                                )
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    } else if (!hasPermission) {
-        MissingPermissionBanner(
-            modifier = Modifier.padding(8.dp),
-            text = stringResource(R.string.missing_permission_calendar_widget_settings),
-            onClick = { permissionsManager.requestPermission(context, PermissionGroup.Calendar) },
-        )
-    } else if (calendars != null) {
-        Text(
-            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            text = stringResource(R.string.widget_config_calendar_no_calendars)
-        )
-    }
-    if (hasPermission) {
-        val colorScheme = MaterialTheme.colorScheme
-        TextButton(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .align(Alignment.CenterHorizontally),
-            contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-            onClick = {
-                CustomTabsIntent.Builder()
-                    .setDefaultColorSchemeParams(
-                        CustomTabColorSchemeParams.Builder()
-                            .setToolbarColor(colorScheme.primaryContainer.toArgb())
-                            .setSecondaryToolbarColor(colorScheme.secondaryContainer.toArgb())
-                            .build()
-                    )
-                    .build().launchUrl(
-                        context,
-                        Uri.parse("https://kvaesitso.mm20.de/docs/user-guide/widgets/calendar-widget#my-calendars-dont-show-up")
-                    )
-            }) {
-            Icon(
-                modifier = Modifier
-                    .padding(end = ButtonDefaults.IconSpacing)
-                    .requiredSize(ButtonDefaults.IconSize),
-                painter = painterResource(R.drawable.help_20px), contentDescription = null
-            )
-            Text(stringResource(R.string.widget_config_calendar_missing_calendars_hint))
         }
     }
 }
