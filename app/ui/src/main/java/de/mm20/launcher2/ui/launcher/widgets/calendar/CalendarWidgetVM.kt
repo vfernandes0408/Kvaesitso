@@ -4,7 +4,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -125,14 +124,9 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     }
 
     fun openCalendarApp(context: Context) {
-        val zoneOffset = OffsetDateTime.now().offset
-        val startMillis = selectedDate.value.atTime(12, 0).toInstant(zoneOffset).toEpochMilli()
-        val builder = CalendarContract.CONTENT_URI.buildUpon()
-        builder.appendPath("time")
-        ContentUris.appendId(builder, startMillis)
-        val intent = Intent(Intent.ACTION_VIEW)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .setData(builder.build())
+        val intent = context.packageManager.getLaunchIntentForPackage("com.google.android.calendar")
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ?: return
         context.tryStartActivity(intent)
     }
 
@@ -143,11 +137,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
         val dayStart = max(now, date.atStartOfDay(zone).toInstant().toEpochMilli())
         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         var events = upcomingEvents.filter {
-            if (it.isTask && it.isCompleted == true) {
-                it.endTime >= dayStart && it.endTime < dayEnd
-            } else {
-                it.endTime >= dayStart && (it.startTime ?: 0L) < dayEnd
-            }
+            it.endTime >= dayStart && (it.startTime ?: 0L) < dayEnd
         }
 
         val startOfDay = date.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -159,7 +149,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
 
             events = events.filter {
                 ((it.startTime != null && it.startTime!! >= startOfDay) ||
-                        it.endTime < startOfNextDay) || it.isTask
+                        it.endTime < startOfNextDay)
             }
 
             val hiddenCount = totalCount - events.size
