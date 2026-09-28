@@ -41,7 +41,6 @@ import de.mm20.launcher2.ui.ktx.animateTo
 import de.mm20.launcher2.ui.launcher.sheets.WidgetPickerSheet
 import de.mm20.launcher2.ui.locals.LocalSnackbarHostState
 import de.mm20.launcher2.widgets.AppWidget
-import de.mm20.launcher2.widgets.CalendarWidget
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -113,17 +112,7 @@ fun WidgetColumn(
                             viewModel.updateWidget(it)
                         },
                         modifier = Modifier
-                            .then(
-                                if (widget is CalendarWidget) {
-                                    Modifier
-                                        .fillMaxWidth(
-                                            widget.config.widthPercent.coerceIn(30, 100) / 100f
-                                        )
-                                        .align(Alignment.CenterHorizontally)
-                                } else {
-                                    Modifier.fillMaxWidth()
-                                }
-                            )
+                            .fillMaxWidth()
                             .onPlaced {
                                 swapThresholds[i][0] = it.positionInParent().y
                                 swapThresholds[i][1] = it.positionInParent().y + it.size.height
