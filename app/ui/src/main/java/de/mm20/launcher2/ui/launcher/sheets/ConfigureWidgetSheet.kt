@@ -912,7 +912,7 @@ fun ColumnScope.ConfigureCalendarWidget(
             ?: widget.config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList()
     }
     val excludedCalendarSources = remember(widget.config) {
-        widget.config.excludedCalendarSources.orEmpty()
+        widget.config.excludedCalendarSources ?: listOf("google")
     }
 
     val groups = remember(calendars) {
