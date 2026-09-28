@@ -1,8 +1,9 @@
 # Calendar Widget
 
 Display calendar events and appointments for the next seven days. In the widget settings, you can
-choose which calendars to display: Tap 'Edit widgets', then tap the <span class="material-symbols-rounded">tune</span> icon for the
-calendar widget. There is also an option to hide all-day events.
+choose which calendars to display and how many upcoming events should be shown in the "Next events" section.
+Tap 'Edit widgets', then tap the <span class="material-symbols-rounded">tune</span> icon for the calendar widget.
+The number of upcoming events can be configured from 1 to 10. There is also an option to hide all-day events.
 
 ## My calendars don't show up!
 
