@@ -55,6 +55,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
 
     private var showRunningPastDayEvents = false
     private var showRunningTasks = false
+    private var upcomingEventsCount = 3
     val hiddenPastEvents = mutableStateOf(0)
     val hiddenRunningTasks = mutableStateOf(0)
 
@@ -62,6 +63,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
 
     fun updateWidget(widget: CalendarWidget) {
         widgetConfig.value = widget.config
+        upcomingEventsCount = widget.config.upcomingEventsCount.coerceIn(1, 10)
     }
 
     private var upcomingEvents: List<CalendarEvent> = emptyList()
@@ -193,15 +195,16 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
         }
 
         calendarEvents.value = events
-        val e = this.upcomingEvents
-        if (events.isEmpty() && e.isNotEmpty()) {
-            nextEvents.value = listOfNotNull(
-                e.sortedBy { if (it.isTask) it.endTime else (it.startTime ?: 0L) }
-                    .find { now < if (it.isTask) it.endTime else (it.startTime ?: 0L) }
-            )
-        } else {
-            nextEvents.value = emptyList()
-        }
+
+        val visibleEventKeys = events.mapTo(mutableSetOf()) { it.key }
+        nextEvents.value = upcomingEvents
+            .asSequence()
+            .filter { !it.isTask }
+            .filter { it.key !in visibleEventKeys }
+            .filter { now < (it.startTime ?: it.endTime) }
+            .sortedBy { it.startTime ?: it.endTime }
+            .take(upcomingEventsCount)
+            .toList()
     }
 
     suspend fun onActive() {
