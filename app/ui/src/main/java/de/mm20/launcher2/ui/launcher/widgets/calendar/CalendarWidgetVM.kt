@@ -64,15 +64,23 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     fun updateWidget(widget: CalendarWidget) {
         val config = widget.config
         val migratedSources = config.excludedCalendarSources?.let { sources ->
-            sources
-                .map {
-                    if (it == "android:com.google") {
-                        "android:com.google.android.calendar"
-                    } else {
-                        it
-                    }
-                }
-                .distinct()
+            when {
+                sources.contains("google") && sources.contains("android:com.google") ->
+                    sources
+                        .filterNot { it == "android:com.google" }
+                        .distinct()
+
+                else ->
+                    sources
+                        .map {
+                            if (it == "android:com.google") {
+                                "android:com.google.android.calendar"
+                            } else {
+                                it
+                            }
+                        }
+                        .distinct()
+            }
         }
 
         widgetConfig.value = if (migratedSources == config.excludedCalendarSources) {
