@@ -329,14 +329,7 @@ internal class GoogleCalendarProvider(
             "oauth2:https://www.googleapis.com/auth/calendar.readonly"
 
         fun isAvailable(context: Context): Boolean {
-            return try {
-                context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR_PACKAGE) != null ||
-                    AccountManager.get(context)
-                        .getAccountsByType(GOOGLE_ACCOUNT_TYPE)
-                        .isNotEmpty()
-            } catch (_: SecurityException) {
-                context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR_PACKAGE) != null
-            }
+            return context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR_PACKAGE) != null
         }
     }
 }
