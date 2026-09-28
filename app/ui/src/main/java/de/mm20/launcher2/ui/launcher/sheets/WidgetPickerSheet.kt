@@ -399,7 +399,6 @@ fun WidgetPickerSheet(
                                 painterResource(
                                     when (it.type) {
                                         WeatherWidget.Type -> R.drawable.light_mode_24px
-                                         -> R.drawable.today_24px
                                         MusicWidget.Type -> R.drawable.music_note_24px
                                         AppsWidget.Type -> R.drawable.apps_24px
                                         NotesWidget.Type -> R.drawable.sticky_note_2_24px
