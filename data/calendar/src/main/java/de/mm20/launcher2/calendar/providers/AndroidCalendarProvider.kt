@@ -41,6 +41,8 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
                 CalendarContract.Instances.STATUS,
                 CalendarContract.Instances.SELF_ATTENDEE_STATUS,
+                CalendarContract.Instances.START_DAY,
+                CalendarContract.Instances.END_DAY,
             )
             val excludedSourceCalendarIds = excludedSources
                 .filter { it.startsWith("android:") }
@@ -139,12 +141,12 @@ class AndroidCalendarProvider(
                 val startTime: Long
                 val endTime: Long
                 if (allday) {
-                    val startDate = java.time.Instant.ofEpochMilli(begin)
-                        .atOffset(java.time.ZoneOffset.UTC)
-                        .toLocalDate()
-                    val endDate = java.time.Instant.ofEpochMilli(cursor.getLong(3))
-                        .atOffset(java.time.ZoneOffset.UTC)
-                        .toLocalDate()
+                    val startDate = java.time.LocalDate.ofEpochDay(
+                        cursor.getInt(12).toLong() - android.text.format.Time.EPOCH_JULIAN_DAY
+                    )
+                    val endDate = java.time.LocalDate.ofEpochDay(
+                        cursor.getInt(13).toLong() - android.text.format.Time.EPOCH_JULIAN_DAY
+                    )
 
                     startTime = startDate
                         .atStartOfDay(java.time.ZoneId.systemDefault())
