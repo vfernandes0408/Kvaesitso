@@ -39,6 +39,7 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
         excludeCalendars: List<String> = emptyList(),
         excludeCalendarSources: List<String> = emptyList(),
         excludeAllDayEvents: Boolean = false,
+        onlyGoogleCalendar: Boolean = false,
     ): Flow<ImmutableList<CalendarEvent>>
 
     fun getCalendars(providerId: String? = null): Flow<List<CalendarList>>
@@ -111,15 +112,19 @@ internal class CalendarRepositoryImpl(
             enabled = true,
         )
         return combineTransform(hasCalendarPermission, hasTasksPermission, plugins) { calPerm, taskPerm, plugins ->
-            val providers = buildList {
-                if (calPerm) add(AndroidCalendarProvider(context)) else null
-                add(GoogleCalendarProvider(context))
-                if (taskPerm) add(TasksCalendarProvider(context)) else null
-                addAll(
-                    plugins.map {
-                        PluginCalendarProvider(context, it.authority)
-                    }
-                )
+            val providers = if (onlyGoogleCalendar) {
+                listOf<CalendarProvider>(GoogleCalendarProvider(context))
+            } else {
+                buildList {
+                    if (calPerm) add(AndroidCalendarProvider(context)) else null
+                    add(GoogleCalendarProvider(context))
+                    if (taskPerm) add(TasksCalendarProvider(context)) else null
+                    addAll(
+                        plugins.map {
+                            PluginCalendarProvider(context, it.authority)
+                        }
+                    )
+                }
             }
 
             emitAll(
