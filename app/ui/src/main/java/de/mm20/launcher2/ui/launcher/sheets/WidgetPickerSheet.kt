@@ -381,7 +381,6 @@ fun WidgetPickerSheet(
                                 val id = UUID.randomUUID()
                                 val widget = when (it.type) {
                                     WeatherWidget.Type -> WeatherWidget(id)
-                                     -> CalendarWidget(id)
                                     MusicWidget.Type -> MusicWidget(id)
                                     AppsWidget.Type -> AppsWidget(id)
                                     NotesWidget.Type -> NotesWidget(id)
