@@ -879,7 +879,6 @@ fun ColumnScope.ConfigureCalendarWidget(
                 summary = {
                     Text(stringResource(R.string.calendar_source_widget_summary))
                 },
-                icon = R.drawable.calendar_month_24px,
                 onClick = {
                     calendarRepository.requestGoogleCalendarAuthorization(context) {
                         // Authorization is handled by the Google account manager.
