@@ -204,10 +204,10 @@ internal class GoogleCalendarProvider(
 
         // Google may keep a declined invitation as an event resource.
         // Only the current user's response must hide the event.
-        val attendees = event.optJSONArray("attendees")
-        if (attendees != null) {
-            for (index in 0 until attendees.length()) {
-                val attendee = attendees.optJSONObject(index) ?: continue
+        val attendeeArray = event.optJSONArray("attendees")
+        if (attendeeArray != null) {
+            for (index in 0 until attendeeArray.length()) {
+                val attendee = attendeeArray.optJSONObject(index) ?: continue
                 if (
                     attendee.optBoolean("self", false) &&
                     attendee.optString("responseStatus").equals("declined", ignoreCase = true)
