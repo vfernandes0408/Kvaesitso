@@ -43,10 +43,9 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.START_DAY,
                 CalendarContract.Instances.END_DAY,
             )
-            val allExcludedCalendarIds = excludedCalendars.distinct()
             val selection = mutableListOf<String>()
             if (query != null) selection.add("${CalendarContract.Instances.TITLE} LIKE ?")
-            if (allExcludedCalendarIds.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${allExcludedCalendarIds.joinToString()})")
+            if (excludedCalendars.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${excludedCalendars.joinToString()})")
             if (excludeAllDayEvents) selection.add("${CalendarContract.Instances.ALL_DAY} = 0")
 
             // The Android Calendar Provider may keep stale rows until synchronization catches up.
