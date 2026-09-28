@@ -3,6 +3,7 @@ package de.mm20.launcher2.calendar
 import android.content.Context
 import de.mm20.launcher2.calendar.providers.AndroidCalendarProvider
 import de.mm20.launcher2.calendar.providers.CalendarList
+import de.mm20.launcher2.calendar.providers.GoogleCalendarProvider
 import de.mm20.launcher2.calendar.providers.CalendarProvider
 import de.mm20.launcher2.calendar.providers.PluginCalendarProvider
 import de.mm20.launcher2.calendar.providers.TasksCalendarProvider
@@ -106,6 +107,7 @@ internal class CalendarRepositoryImpl(
         return combineTransform(hasCalendarPermission, hasTasksPermission, plugins) { calPerm, taskPerm, plugins ->
             val providers = buildList {
                 if (calPerm) add(AndroidCalendarProvider(context)) else null
+                add(GoogleCalendarProvider(context))
                 if (taskPerm) add(TasksCalendarProvider(context)) else null
                 addAll(
                     plugins.map {
@@ -201,6 +203,7 @@ internal class CalendarRepositoryImpl(
             ) { calPerm, tasksPerm, plugins ->
                 buildList {
                     if (calPerm) add(AndroidCalendarProvider(context))
+                    add(GoogleCalendarProvider(context))
                     if (tasksPerm) add(TasksCalendarProvider(context))
                     addAll(plugins.map { PluginCalendarProvider(context, it.authority) })
                 }
