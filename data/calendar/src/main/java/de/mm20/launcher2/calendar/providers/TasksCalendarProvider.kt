@@ -20,11 +20,9 @@ internal class TasksCalendarProvider(
         from: Long,
         to: Long,
         excludedCalendars: List<String>,
-        excludedSources: List<String>,
         excludeAllDayEvents: Boolean,
         allowNetwork: Boolean
     ): List<CalendarEvent> {
-        if (excludedSources.contains(namespace)) return emptyList()
         return withContext(Dispatchers.IO) {
             val startOfDay = Instant.ofEpochMilli(from)
                 .atZone(ZoneId.systemDefault())
