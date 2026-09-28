@@ -37,6 +37,7 @@ internal class GoogleCalendarProvider(
         if (!isAvailable(context)) return@withContext emptyList()
 
         val excluded = excludedCalendars.toSet()
+        if (excluded.contains(SOURCE_CALENDAR_ID)) return@withContext emptyList()
         val results = mutableListOf<GoogleCalendarEvent>()
 
         for (account in googleAccounts()) {
@@ -258,6 +259,7 @@ internal class GoogleCalendarProvider(
     companion object {
         const val NAMESPACE = "google"
         const val SOURCE_ID = "google"
+        private const val SOURCE_CALENDAR_ID = "source"
 
         private const val GOOGLE_ACCOUNT_TYPE = "com.google"
         private const val AUTH_TOKEN_TYPE =
