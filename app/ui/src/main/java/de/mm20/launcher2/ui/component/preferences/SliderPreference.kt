@@ -109,6 +109,7 @@ fun SliderPreference(
 fun SliderPreference(
     title: String,
     @DrawableRes icon: Int? = null,
+    iconPadding: Boolean = icon != null,
     value: Int,
     min: Int = 0,
     max: Int = 100,
@@ -120,6 +121,7 @@ fun SliderPreference(
     SliderPreference(
         title = title,
         icon = icon,
+        iconPadding = iconPadding,
         value = value.toFloat(),
         enabled = enabled,
         min = min.toFloat(),
