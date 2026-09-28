@@ -1,5 +1,6 @@
 package de.mm20.launcher2.calendar
 
+import android.app.Activity
 import android.content.Context
 import de.mm20.launcher2.calendar.providers.AndroidCalendarProvider
 import de.mm20.launcher2.calendar.providers.CalendarList
@@ -41,6 +42,11 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
     ): Flow<ImmutableList<CalendarEvent>>
 
     fun getCalendars(providerId: String? = null): Flow<List<CalendarList>>
+
+    fun requestGoogleCalendarAuthorization(
+        activity: Activity,
+        onResult: (Boolean) -> Unit,
+    )
 }
 
 internal class CalendarRepositoryImpl(
@@ -165,6 +171,13 @@ internal class CalendarRepositoryImpl(
             }
             emitAll(result)
         }
+    }
+
+    override fun requestGoogleCalendarAuthorization(
+        activity: Activity,
+        onResult: (Boolean) -> Unit,
+    ) {
+        GoogleCalendarProvider(context).requestAuthorization(activity, onResult)
     }
 
     override fun getCalendars(providerId: String?): Flow<List<CalendarList>> {
