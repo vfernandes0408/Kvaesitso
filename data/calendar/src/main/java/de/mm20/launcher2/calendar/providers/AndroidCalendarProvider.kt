@@ -46,7 +46,12 @@ class AndroidCalendarProvider(
             )
             val excludedSourceCalendarIds = excludedSources
                 .filter { it.startsWith("android:") }
-                .map { it.removePrefix("android:") }
+                .map {
+                    when (val source = it.removePrefix("android:")) {
+                        GOOGLE_CALENDAR_PACKAGE -> GOOGLE_ACCOUNT_TYPE
+                        else -> source
+                    }
+                }
                 .distinct()
                 .let { accountTypes ->
                     if (accountTypes.isEmpty()) {
@@ -310,7 +315,10 @@ class AndroidCalendarProvider(
                             color = cursor.getInt(3),
                             types = listOf(CalendarListType.Calendar),
                             providerId = "local",
-                            sourceId = "android:" + (cursor.getStringOrNull(6) ?: "unknown"),
+                            sourceId = when (cursor.getStringOrNull(6)) {
+                                GOOGLE_ACCOUNT_TYPE -> "android:$GOOGLE_CALENDAR_PACKAGE"
+                                else -> "android:" + (cursor.getStringOrNull(6) ?: "unknown")
+                            },
                         )
                     )
                 } catch (e: NullPointerException) {
@@ -324,4 +332,9 @@ class AndroidCalendarProvider(
     }
 
     override val namespace: String = "local"
+
+    companion object {
+        private const val GOOGLE_ACCOUNT_TYPE = "com.google"
+        private const val GOOGLE_CALENDAR_PACKAGE = "com.google.android.calendar"
+    }
 }
