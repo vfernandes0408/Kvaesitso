@@ -10,8 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.mm20.launcher2.calendar.CalendarRepository
 import de.mm20.launcher2.ktx.tryStartActivity
-import de.mm20.launcher2.permissions.PermissionGroup
-import de.mm20.launcher2.permissions.PermissionsManager
 import de.mm20.launcher2.search.CalendarEvent
 import de.mm20.launcher2.searchable.PinnedLevel
 import de.mm20.launcher2.searchable.SavableSearchableRepository
@@ -49,46 +47,15 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     val nextEvents = mutableStateOf<List<CalendarEvent>>(emptyList())
     var availableDates = listOf(LocalDate.now())
 
-    private val permissionsManager: PermissionsManager by inject()
-    val hasPermission = permissionsManager.hasPermission(PermissionGroup.Calendar)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-
     private var showRunningPastDayEvents = false
-    private var showRunningTasks = false
     private var upcomingEventsCount = 3
     val hiddenPastEvents = mutableStateOf(0)
-    val hiddenRunningTasks = mutableStateOf(0)
 
     val selectedDate = mutableStateOf(LocalDate.now())
 
     fun updateWidget(widget: CalendarWidget) {
-        val config = widget.config
-        val migratedSources = config.excludedCalendarSources?.let { sources ->
-            when {
-                sources.contains("google") && sources.contains("android:com.google") ->
-                    sources
-                        .filterNot { it == "android:com.google" }
-                        .distinct()
-
-                else ->
-                    sources
-                        .map {
-                            if (it == "android:com.google") {
-                                "android:com.google.android.calendar"
-                            } else {
-                                it
-                            }
-                        }
-                        .distinct()
-            }
-        }
-
-        widgetConfig.value = if (migratedSources == config.excludedCalendarSources) {
-            config
-        } else {
-            config.copy(excludedCalendarSources = migratedSources)
-        }
-        upcomingEventsCount = config.upcomingEventsCount.coerceIn(1, 10)
+        widgetConfig.value = widget.config
+        upcomingEventsCount = widget.config.upcomingEventsCount.coerceIn(1, 10)
     }
 
     private var upcomingEvents: List<CalendarEvent> = emptyList()
@@ -133,7 +100,6 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     fun selectDate(date: LocalDate) {
         val dates = availableDates
         showRunningPastDayEvents = false
-        showRunningTasks = false
         if (dates.contains(date)) {
             selectedDate.value = date
             updateEvents()
@@ -145,10 +111,6 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
         updateEvents()
     }
 
-    fun showAllTasks() {
-        showRunningTasks = true
-        updateEvents()
-    }
 
     fun createEvent(context: Context) {
         val intent = Intent(Intent.ACTION_EDIT)
@@ -205,19 +167,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
         } else {
             hiddenPastEvents.value = 0
         }
-        if (!showRunningTasks) {
-            val totalCount = events.size
 
-            events = events.filter {
-                ((it.startTime != null && it.startTime!! >= startOfDay) ||
-                        it.endTime < startOfNextDay) || !it.isTask
-            }
-
-            val hiddenCount = totalCount - events.size
-            hiddenRunningTasks.value = hiddenCount
-        } else {
-            hiddenRunningTasks.value = 0
-        }
 
         calendarEvents.value = events
 
@@ -246,9 +196,6 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                     .toInstant()
                     .toEpochMilli(),
                 excludeAllDayEvents = !config.allDayEvents,
-                excludeCalendars = config.excludedCalendarIds
-                    ?: config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList(),
-                onlyGoogleCalendar = true,
             ).collectLatest { events ->
                 searchableRepository.getKeys(
                     includeTypes = listOf("calendar", "tasks.org", "plugin.calendar"),
@@ -256,16 +203,11 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                     limit = 9999,
                 ).collectLatest { hidden ->
                     upcomingEvents = events
-                        .filter {
-                            !hidden.contains(it.key) && !(!config.completedTasks && it.isCompleted == true)
-                        }.sortedBy { it.startTime ?: it.endTime }
+                        .filter { !hidden.contains(it.key) }
+                        .sortedBy { it.startTime ?: it.endTime }
                 }
             }
 
         }
-    }
-
-    fun requestCalendarPermission(context: AppCompatActivity) {
-        permissionsManager.requestPermission(context, PermissionGroup.Calendar)
     }
 }
