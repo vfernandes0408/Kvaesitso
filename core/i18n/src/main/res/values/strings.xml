@@ -302,6 +302,7 @@
     <string name="calendar_widget_pinned_events">Upcoming</string>
     <!-- Headline used in calendar widget for the next event, if there is no event today -->
     <string name="calendar_widget_next_events">Next events</string>
+    <string name="calendar_widget_width">Widget width</string>
     <string name="calendar_widget_upcoming_events_count">Number of upcoming events</string>
     <string name="calendar_widget_no_events">No events today</string>
     <!--
