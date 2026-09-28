@@ -76,7 +76,7 @@ class AndroidCalendarProvider(
 
             // The Android Calendar Provider may keep stale rows until synchronization catches up.
             // Never expose cancelled events or events declined by the current user.
-            selection.add("(${CalendarContract.Instances.DELETED} IS NULL OR ${CalendarContract.Instances.DELETED} != 1)")
+            selection.add("(${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)")
             selection.add("${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}")
             selection.add("(${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED})")
 
@@ -178,7 +178,7 @@ class AndroidCalendarProvider(
         )
         val selection = """
             ${CalendarContract.Instances.EVENT_ID} = ?
-            AND (${CalendarContract.Instances.DELETED} IS NULL OR ${CalendarContract.Instances.DELETED} != 1)
+            AND (${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)
             AND ${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}
             AND (
                 ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL
