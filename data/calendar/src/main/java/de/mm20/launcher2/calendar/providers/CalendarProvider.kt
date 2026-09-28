@@ -12,7 +12,7 @@ internal interface CalendarProvider {
         allowNetwork: Boolean = false,
     ): List<CalendarEvent>
 
-    suspend fun getCalendarLists(): List<CalendarList>
+    suspend fun getCalendarLists(): List<CalendarList> = emptyList()
 
     val namespace: String
 }
