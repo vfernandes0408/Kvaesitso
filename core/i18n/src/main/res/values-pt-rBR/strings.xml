@@ -276,6 +276,7 @@
     <string name="action_next">Próximo</string>
     <string name="action_undo">Desfazer</string>
     <string name="calendar_widget_next_events">Próximos eventos</string>
+    <string name="calendar_widget_width">Largura do widget</string>
     <string name="calendar_widget_upcoming_events_count">Quantidade de próximos eventos</string>
     <string name="missing_permission_calendar_search">Conceda permissão de calendário para pesquisar o seu calendário.</string>
     <string name="menu_customize">Personalizar</string>
