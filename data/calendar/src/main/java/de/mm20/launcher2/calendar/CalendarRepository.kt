@@ -36,7 +36,6 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
     fun findMany(
         from: Long = System.currentTimeMillis(),
         to: Long = from + 14 * 24 * 60 * 60 * 1000L,
-        excludeCalendars: List<String> = emptyList(),
         excludeAllDayEvents: Boolean = false,
     ): Flow<ImmutableList<CalendarEvent>>
 
@@ -99,23 +98,9 @@ internal class CalendarRepositoryImpl(
     override fun findMany(
         from: Long,
         to: Long,
-        excludeCalendars: List<String>,
-        excludeAllDayEvents: Boolean,
-    ): Flow<ImmutableList<CalendarEvent>> {
-        return emitGoogleCalendarEvents(
-            from = from,
-            to = to,
-            excludeAllDayEvents = excludeAllDayEvents,
-        )
-    }
-
-    private fun emitGoogleCalendarEvents(
-        from: Long,
-        to: Long,
         excludeAllDayEvents: Boolean,
     ): Flow<ImmutableList<CalendarEvent>> {
         return queryCalendarEvents(
-            query = null,
             intervalStart = from,
             intervalEnd = to,
             excludeAllDayEvents = excludeAllDayEvents,
