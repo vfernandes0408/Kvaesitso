@@ -177,7 +177,7 @@ internal class GoogleCalendarProvider(
         val url = buildString {
             append("https://www.googleapis.com/calendar/v3/calendars/")
             append(encodedCalendarId)
-            append("/events?singleEvents=true&orderBy=startTime&showDeleted=false")
+            append("/events?singleEvents=true&orderBy=startTime&showDeleted=false&showHiddenInvitations=false")
             append("&timeMin=").append(timeMin)
             append("&timeMax=").append(timeMax)
             append("&maxResults=2500")
@@ -200,7 +200,22 @@ internal class GoogleCalendarProvider(
         calendar: JSONObject,
         event: JSONObject,
     ): GoogleCalendarEvent? {
-        if (event.optString("status") == "cancelled") return null
+        if (event.optString("status").equals("cancelled", ignoreCase = true)) return null
+
+        // Google may keep a declined invitation as an event resource.
+        // Only the current user's response must hide the event.
+        val attendees = event.optJSONArray("attendees")
+        if (attendees != null) {
+            for (index in 0 until attendees.length()) {
+                val attendee = attendees.optJSONObject(index) ?: continue
+                if (
+                    attendee.optBoolean("self", false) &&
+                    attendee.optString("responseStatus").equals("declined", ignoreCase = true)
+                ) {
+                    return null
+                }
+            }
+        }
 
         val id = event.optString("id").takeIf { it.isNotBlank() } ?: return null
         val summary = event.optString("summary").ifBlank { "(Sem título)" }
