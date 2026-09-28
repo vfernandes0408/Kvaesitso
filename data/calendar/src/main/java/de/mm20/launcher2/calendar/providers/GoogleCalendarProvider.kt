@@ -249,7 +249,7 @@ internal class GoogleCalendarProvider(
     }
 
     private fun encodeCalendarId(account: Account, calendarId: String): String {
-        val value = "\${account.name}|$calendarId"
+        val value = "${account.name}|$calendarId"
         return Base64.encodeToString(
             value.toByteArray(Charsets.UTF_8),
             Base64.URL_SAFE or Base64.NO_WRAP,
