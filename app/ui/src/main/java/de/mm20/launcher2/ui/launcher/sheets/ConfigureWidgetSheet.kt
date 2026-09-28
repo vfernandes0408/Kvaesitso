@@ -959,17 +959,31 @@ fun ColumnScope.ConfigureCalendarWidget(
                         iconPadding = false,
                         value = sourceEnabled,
                         onValueChanged = { enabled ->
-                            onWidgetUpdated(
-                                widget.copy(
-                                    config = widget.config.copy(
-                                        excludedCalendarSources = if (enabled) {
-                                            excludedCalendarSources - group.key
-                                        } else {
-                                            excludedCalendarSources + group.key
-                                        }
+                            if (enabled && group.key == "google") {
+                                calendarRepository.requestGoogleCalendarAuthorization(context) { authorized ->
+                                    if (authorized) {
+                                        onWidgetUpdated(
+                                            widget.copy(
+                                                config = widget.config.copy(
+                                                    excludedCalendarSources = excludedCalendarSources - group.key
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                            } else {
+                                onWidgetUpdated(
+                                    widget.copy(
+                                        config = widget.config.copy(
+                                            excludedCalendarSources = if (enabled) {
+                                                excludedCalendarSources - group.key
+                                            } else {
+                                                excludedCalendarSources + group.key
+                                            }
+                                        )
                                     )
                                 )
-                            )
+                            }
                         }
                     )
                     if (group.value.isNotEmpty()) {
