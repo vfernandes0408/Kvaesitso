@@ -62,8 +62,28 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     val selectedDate = mutableStateOf(LocalDate.now())
 
     fun updateWidget(widget: CalendarWidget) {
-        widgetConfig.value = widget.config
-        upcomingEventsCount = widget.config.upcomingEventsCount.coerceIn(1, 10)
+        val config = widget.config
+        val migratedSources = config.excludedCalendarSources?.let { sources ->
+            // Versions of this change temporarily stored android:com.google as
+            // excluded by default. Migrate that generated value so synchronized
+            // Google calendars can appear again.
+            if (
+                sources.size == 2 &&
+                sources.contains("google") &&
+                sources.contains("android:com.google")
+            ) {
+                listOf("google")
+            } else {
+                sources
+            }
+        }
+
+        widgetConfig.value = if (migratedSources == config.excludedCalendarSources) {
+            config
+        } else {
+            config.copy(excludedCalendarSources = migratedSources)
+        }
+        upcomingEventsCount = config.upcomingEventsCount.coerceIn(1, 10)
     }
 
     private var upcomingEvents: List<CalendarEvent> = emptyList()
