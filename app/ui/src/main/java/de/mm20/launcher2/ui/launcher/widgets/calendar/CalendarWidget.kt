@@ -5,7 +5,6 @@ import android.icu.text.DateFormat
 import android.icu.util.Calendar
 import android.icu.util.ULocale
 import android.text.format.DateUtils
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -51,9 +50,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.mm20.launcher2.Quintuple
+import de.mm20.launcher2.Quadruple
 import de.mm20.launcher2.ui.R
-import de.mm20.launcher2.ui.component.MissingPermissionBanner
 import de.mm20.launcher2.ui.launcher.search.common.list.SearchResultList
 import de.mm20.launcher2.ui.locals.LocalCalendarSystems
 import de.mm20.launcher2.widgets.CalendarWidget
@@ -163,25 +161,12 @@ fun CalendarWidget(
         val events by viewModel.calendarEvents
         val nextEvents by viewModel.nextEvents
         val runningEvents by viewModel.hiddenPastEvents
-        val runningTasks by viewModel.hiddenRunningTasks
-        val hasPermission by viewModel.hasPermission.collectAsState()
         Column {
-            if (hasPermission == false) {
-                MissingPermissionBanner(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp)
-                        .padding(horizontal = 12.dp),
-                    text = stringResource(R.string.missing_permission_calendar_widget),
-                    onClick = { viewModel.requestCalendarPermission(context as AppCompatActivity) }
-                )
-            }
             AnimatedContent(
-                Quintuple(
+                Quadruple(
                     selectedDate,
                     events,
                     runningEvents,
-                    runningTasks,
                     nextEvents
                 ),
                 transitionSpec = {
@@ -218,13 +203,13 @@ fun CalendarWidget(
                         }
                     }
                 }
-            ) { (_, events, runningEvents, runningTasks, nextEvents) ->
+            ) { (_, events, runningEvents, nextEvents) ->
                 Column(
                     modifier = Modifier
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp)
                 ) {
-                    if (events.isEmpty() && hasPermission == true) {
+                    if (events.isEmpty()) {
                         Info(text = stringResource(R.string.calendar_widget_no_events))
                     }
                     SearchResultList(
@@ -246,19 +231,6 @@ fun CalendarWidget(
                         )
                     }
 
-                    if (runningTasks > 0) {
-                        Info(
-                            text = pluralStringResource(
-                                R.plurals.calendar_widget_running_tasks,
-                                runningTasks,
-                                runningTasks
-                            ),
-                            onClick = {
-                                viewModel.showAllTasks()
-                            },
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
                     if (nextEvents.isNotEmpty()) {
                         Text(
                             stringResource(R.string.calendar_widget_next_events),
