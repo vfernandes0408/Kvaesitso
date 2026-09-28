@@ -223,18 +223,8 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                 excludeAllDayEvents = !config.allDayEvents,
                 excludeCalendars = config.excludedCalendarIds
                     ?: config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList(),
-                excludeCalendarSources = buildList {
-                    addAll(
-                        config.excludedCalendarSources
-                            ?: listOf("google", "android:com.google")
-                    )
-                    // The direct Google provider is the authoritative Google source.
-                    // Keep the Android Google sync provider disabled to prevent stale
-                    // or duplicated events from appearing after a Google event is deleted.
-                    if (!contains("google")) {
-                        add("android:com.google")
-                    }
-                }.distinct(),
+                excludeCalendarSources = config.excludedCalendarSources
+                    ?: listOf("google"),
             ).collectLatest { events ->
                 searchableRepository.getKeys(
                     includeTypes = listOf("calendar", "tasks.org", "plugin.calendar"),
