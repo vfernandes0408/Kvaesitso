@@ -890,6 +890,28 @@ fun ColumnScope.ConfigureCalendarWidget(
         calendars?.any { it.types.contains(CalendarListType.Tasks) } == true
     }
 
+    OutlinedCard {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            SliderPreference(
+                title = stringResource(R.string.calendar_widget_upcoming_events_count),
+                iconPadding = false,
+                value = widget.config.upcomingEventsCount,
+                min = 1,
+                max = 10,
+                step = 1,
+                onValueChanged = {
+                    onWidgetUpdated(
+                        widget.copy(
+                            config = widget.config.copy(upcomingEventsCount = it)
+                        )
+                    )
+                }
+            )
+        }
+    }
+
     if (hasTasks) {
         OutlinedCard {
             Column(
