@@ -18,7 +18,6 @@ class AndroidCalendarProvider(
         from: Long,
         to: Long,
         excludedCalendars: List<String>,
-        excludedSources: List<String>,
         excludeAllDayEvents: Boolean,
         allowNetwork: Boolean
     ): List<CalendarEvent> {
@@ -44,38 +43,7 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.START_DAY,
                 CalendarContract.Instances.END_DAY,
             )
-            val excludedSourceCalendarIds = excludedSources
-                .filter { it.startsWith("android:") }
-                .map {
-                    when (val source = it.removePrefix("android:")) {
-                        GOOGLE_CALENDAR_PACKAGE -> GOOGLE_ACCOUNT_TYPE
-                        else -> source
-                    }
-                }
-                .distinct()
-                .let { accountTypes ->
-                    if (accountTypes.isEmpty()) {
-                        emptyList()
-                    } else {
-                        val placeholders = accountTypes.joinToString(",") { "?" }
-                        val calendarCursor = context.contentResolver.query(
-                            CalendarContract.Calendars.CONTENT_URI,
-                            arrayOf(CalendarContract.Calendars._ID),
-                            "${CalendarContract.Calendars.ACCOUNT_TYPE} IN ($placeholders)",
-                            accountTypes.toTypedArray(),
-                            null,
-                        )
-                        buildList {
-                            calendarCursor?.use {
-                                while (it.moveToNext()) {
-                                    add(it.getLong(0).toString())
-                                }
-                            }
-                        }
-                    }
-                }
-
-            val allExcludedCalendarIds = (excludedCalendars + excludedSourceCalendarIds).distinct()
+            val allExcludedCalendarIds = excludedCalendars.distinct()
             val selection = mutableListOf<String>()
             if (query != null) selection.add("${CalendarContract.Instances.TITLE} LIKE ?")
             if (allExcludedCalendarIds.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${allExcludedCalendarIds.joinToString()})")
@@ -315,10 +283,6 @@ class AndroidCalendarProvider(
                             color = cursor.getInt(3),
                             types = listOf(CalendarListType.Calendar),
                             providerId = "local",
-                            sourceId = when (cursor.getStringOrNull(6)) {
-                                GOOGLE_ACCOUNT_TYPE -> "android:$GOOGLE_CALENDAR_PACKAGE"
-                                else -> "android:" + (cursor.getStringOrNull(6) ?: "unknown")
-                            },
                         )
                     )
                 } catch (e: NullPointerException) {
@@ -333,8 +297,4 @@ class AndroidCalendarProvider(
 
     override val namespace: String = "local"
 
-    companion object {
-        private const val GOOGLE_ACCOUNT_TYPE = "com.google"
-        private const val GOOGLE_CALENDAR_PACKAGE = "com.google.android.calendar"
-    }
 }
