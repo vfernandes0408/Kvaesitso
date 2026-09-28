@@ -9,6 +9,7 @@ import de.mm20.launcher2.search.CalendarEvent
 import de.mm20.launcher2.search.calendar.CalendarListType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 class AndroidCalendarProvider(
     private val context: Context,
@@ -38,22 +39,11 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.CALENDAR_ID,
                 CalendarContract.Instances.DESCRIPTION,
                 CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
-                CalendarContract.Instances.STATUS,
-                CalendarContract.Instances.SELF_ATTENDEE_STATUS,
-                CalendarContract.Instances.START_DAY,
-                CalendarContract.Instances.END_DAY,
             )
             val selection = mutableListOf<String>()
             if (query != null) selection.add("${CalendarContract.Instances.TITLE} LIKE ?")
             if (excludedCalendars.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${excludedCalendars.joinToString()})")
             if (excludeAllDayEvents) selection.add("${CalendarContract.Instances.ALL_DAY} = 0")
-
-            // The Android Calendar Provider may keep stale rows until synchronization catches up.
-            // Never expose cancelled events or events declined by the current user.
-            selection.add("(${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)")
-            selection.add("${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}")
-            selection.add("(${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED})")
-
             val selArgs = if (query != null) arrayOf("%$query%") else null
             val sort = "${CalendarContract.Instances.BEGIN} ASC"
             val cursor = context.contentResolver.query(
@@ -70,30 +60,7 @@ class AndroidCalendarProvider(
             )
             val s = "${CalendarContract.Attendees.ATTENDEE_NAME} COLLATE NOCASE ASC"
             while (cursor.moveToNext()) {
-                val eventId = cursor.getLong(0)
-
-                // Instances can lag behind the source Events row. Validate the
-                // original event before displaying the occurrence.
-                val eventSelection = """
-                    ${CalendarContract.Events._ID} = ?
-                    AND (${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)
-                    AND ${CalendarContract.Events.STATUS} != ${CalendarContract.Events.STATUS_CANCELED}
-                """.trimIndent()
-                val eventCursor = context.contentResolver.query(
-                    CalendarContract.Events.CONTENT_URI,
-                    arrayOf(
-                        CalendarContract.Events._ID,
-                        CalendarContract.Events.STATUS,
-                        CalendarContract.Events.DELETED,
-                    ),
-                    eventSelection,
-                    arrayOf(eventId.toString()),
-                    null,
-                )
-                val eventExists = eventCursor?.use { it.moveToFirst() } == true
-                if (!eventExists) continue
-
-                val sel = "${CalendarContract.Attendees.EVENT_ID} = $eventId"
+                val sel = "${CalendarContract.Attendees.EVENT_ID} = ${cursor.getLong(0)}"
                 val cur = context.contentResolver.query(
                     CalendarContract.Attendees.CONTENT_URI,
                     proj, sel, null, s
@@ -110,35 +77,17 @@ class AndroidCalendarProvider(
                 val allday = cursor.getInt(4) > 0
                 val begin = cursor.getLong(2)
 
-                val startTime: Long
-                val endTime: Long
-                if (allday) {
-                    val startDate = java.time.LocalDate.ofEpochDay(
-                        cursor.getInt(12).toLong() - android.text.format.Time.EPOCH_JULIAN_DAY
-                    )
-                    val endDate = java.time.LocalDate.ofEpochDay(
-                        cursor.getInt(13).toLong() - android.text.format.Time.EPOCH_JULIAN_DAY
-                    )
-
-                    startTime = startDate
-                        .atStartOfDay(java.time.ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-                    endTime = endDate
-                        .atStartOfDay(java.time.ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli() - 1L
+                val tzOffset = if (allday) {
+                    Calendar.getInstance().timeZone.getOffset(begin)
                 } else {
-                    startTime = begin
-                    endTime = cursor.getLong(3)
+                    0
                 }
-
                 val event = AndroidCalendarEvent(
                     label = cursor.getStringOrNull(1) ?: continue,
                     id = cursor.getLong(0),
                     color = cursor.getInt(5),
-                    startTime = startTime,
-                    endTime = endTime,
+                    startTime = begin - tzOffset,
+                    endTime = cursor.getLong(3) - tzOffset - if (allday) 1 else 0,
                     allDay = allday,
                     location = cursor.getStringOrNull(6) ?: "",
                     attendees = attendees,
@@ -173,15 +122,7 @@ class AndroidCalendarProvider(
             CalendarContract.Instances.DESCRIPTION,
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
         )
-        val selection = """
-            ${CalendarContract.Instances.EVENT_ID} = ?
-            AND (${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)
-            AND ${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}
-            AND (
-                ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL
-                OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED}
-            )
-        """.trimIndent()
+        val selection = CalendarContract.Instances.EVENT_ID + " = ?"
         val selArgs = arrayOf(id.toString())
         val cursor = context.contentResolver.query(uri, projection, selection, selArgs, null)
             ?: return@withContext null
@@ -216,35 +157,17 @@ class AndroidCalendarProvider(
                 )
             }
             cur.close()
-            val startTime: Long
-            val endTime: Long
-            if (allday) {
-                val startDate = java.time.Instant.ofEpochMilli(begin)
-                    .atOffset(java.time.ZoneOffset.UTC)
-                    .toLocalDate()
-                val endDate = java.time.Instant.ofEpochMilli(end)
-                    .atOffset(java.time.ZoneOffset.UTC)
-                    .toLocalDate()
-
-                startTime = startDate
-                    .atStartOfDay(java.time.ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-                endTime = endDate
-                    .atStartOfDay(java.time.ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli() - 1L
+            val tzOffset = if (allday) {
+                Calendar.getInstance().timeZone.getOffset(begin)
             } else {
-                startTime = begin
-                endTime = end
+                0
             }
-
             return@withContext AndroidCalendarEvent(
                 label = title,
                 id = id,
                 color = color,
-                startTime = startTime,
-                endTime = endTime,
+                startTime = begin - tzOffset,
+                endTime = end - tzOffset - if (allday) 1 else 0,
                 allDay = allday,
                 location = location ?: "",
                 attendees = attendees,
@@ -294,5 +217,4 @@ class AndroidCalendarProvider(
     }
 
     override val namespace: String = "local"
-
 }
