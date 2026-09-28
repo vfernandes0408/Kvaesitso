@@ -181,7 +181,6 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                     .atStartOfDay(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli(),
-                excludeAllDayEvents = !config.allDayEvents,
             ).collectLatest { events ->
                 upcomingEvents = events
                     .sortedBy { it.startTime ?: it.endTime }
