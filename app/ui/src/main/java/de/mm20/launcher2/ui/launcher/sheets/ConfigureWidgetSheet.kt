@@ -11,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabColorSchemeParams
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
@@ -89,10 +88,7 @@ import de.mm20.launcher2.data.customattrs.CustomAttributesRepository
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.permissions.PermissionGroup
 import de.mm20.launcher2.permissions.PermissionsManager
-import de.mm20.launcher2.plugin.PluginRepository
-import de.mm20.launcher2.plugin.PluginType
 import de.mm20.launcher2.search.Tag
-import de.mm20.launcher2.search.calendar.CalendarListType
 import de.mm20.launcher2.themes.colors.atTone
 import de.mm20.launcher2.ui.R
 import de.mm20.launcher2.ui.base.LocalAppWidgetHost
@@ -103,7 +99,6 @@ import de.mm20.launcher2.ui.component.MissingPermissionBanner
 import de.mm20.launcher2.ui.component.dragndrop.DraggableItem
 import de.mm20.launcher2.ui.component.dragndrop.LazyDragAndDropColumn
 import de.mm20.launcher2.ui.component.dragndrop.rememberLazyDragAndDropListState
-import de.mm20.launcher2.ui.component.preferences.CheckboxPreference
 import de.mm20.launcher2.ui.component.preferences.Preference
 import de.mm20.launcher2.ui.component.preferences.SliderPreference
 import de.mm20.launcher2.ui.component.preferences.SwitchPreference
