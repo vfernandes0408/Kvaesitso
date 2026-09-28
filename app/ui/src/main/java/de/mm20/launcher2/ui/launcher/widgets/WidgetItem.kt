@@ -40,7 +40,6 @@ import de.mm20.launcher2.ui.launcher.widgets.notes.NotesWidget
 import de.mm20.launcher2.ui.launcher.widgets.weather.WeatherWidget
 import de.mm20.launcher2.ui.theme.transparency.transparency
 import de.mm20.launcher2.widgets.AppWidget
-import de.mm20.launcher2.widgets.CalendarWidget
 import de.mm20.launcher2.widgets.AppsWidget
 import de.mm20.launcher2.widgets.MusicWidget
 import de.mm20.launcher2.widgets.NotesWidget
@@ -132,10 +131,7 @@ fun WidgetItem(
                         MusicWidget(widget)
                     }
 
-                    is CalendarWidget -> {
-                        CalendarWidget(widget)
-                    }
-
+                    
                     is AppsWidget -> {
                         AppsWidget(widget)
                     }
