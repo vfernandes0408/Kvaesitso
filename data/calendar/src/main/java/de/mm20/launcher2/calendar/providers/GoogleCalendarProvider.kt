@@ -69,8 +69,6 @@ internal class GoogleCalendarProvider(
         results.sortedBy { it.startTime ?: it.endTime }
     }
 
-    override suspend fun getCalendarLists(): List<CalendarList> = emptyList()
-
     fun requestAuthorization(
         activity: Activity,
         onResult: (Boolean) -> Unit,
