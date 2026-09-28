@@ -83,27 +83,19 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import de.mm20.launcher2.calendar.CalendarRepository
 import de.mm20.launcher2.crashreporter.CrashReporter
 import de.mm20.launcher2.data.customattrs.CustomAttributesRepository
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
-import de.mm20.launcher2.permissions.PermissionGroup
-import de.mm20.launcher2.permissions.PermissionsManager
-import de.mm20.launcher2.plugin.PluginRepository
-import de.mm20.launcher2.plugin.PluginType
 import de.mm20.launcher2.search.Tag
-import de.mm20.launcher2.search.calendar.CalendarListType
 import de.mm20.launcher2.themes.colors.atTone
 import de.mm20.launcher2.ui.R
 import de.mm20.launcher2.ui.base.LocalAppWidgetHost
 import de.mm20.launcher2.ui.component.DismissableBottomSheet
 import de.mm20.launcher2.ui.component.DragResizeHandle
 import de.mm20.launcher2.ui.component.LargeMessage
-import de.mm20.launcher2.ui.component.MissingPermissionBanner
 import de.mm20.launcher2.ui.component.dragndrop.DraggableItem
 import de.mm20.launcher2.ui.component.dragndrop.LazyDragAndDropColumn
 import de.mm20.launcher2.ui.component.dragndrop.rememberLazyDragAndDropListState
-import de.mm20.launcher2.ui.component.preferences.CheckboxPreference
 import de.mm20.launcher2.ui.component.preferences.Preference
 import de.mm20.launcher2.ui.component.preferences.SliderPreference
 import de.mm20.launcher2.ui.component.preferences.SwitchPreference
@@ -147,7 +139,6 @@ fun ConfigureWidgetSheet(
             when (widget) {
                 is WeatherWidget -> ConfigureWeatherWidget(widget, onWidgetUpdated)
                 is AppWidget -> ConfigureAppWidget(widget, onWidgetUpdated)
-                 -> ConfigureCalendarWidget(widget, onWidgetUpdated)
                 is AppsWidget -> ConfigureFavoritesWidget(widget, onWidgetUpdated)
                 is MusicWidget -> ConfigureMusicWidget(widget, onWidgetUpdated)
                 is NotesWidget -> ConfigureNotesWidget(widget, onWidgetUpdated)
