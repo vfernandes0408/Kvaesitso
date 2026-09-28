@@ -177,7 +177,7 @@ internal class GoogleCalendarProvider(
         val url = buildString {
             append("https://www.googleapis.com/calendar/v3/calendars/")
             append(encodedCalendarId)
-            append("/events?singleEvents=true&orderBy=startTime&showDeleted=false&showHiddenInvitations=false")
+            append("/events?singleEvents=true&orderBy=startTime&showDeleted=true&showHiddenInvitations=false")
             append("&timeMin=").append(timeMin)
             append("&timeMax=").append(timeMax)
             append("&maxResults=2500")
