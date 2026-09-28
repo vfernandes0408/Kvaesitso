@@ -1,6 +1,5 @@
 package de.mm20.launcher2.ui.launcher.widgets.calendar
 
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
@@ -11,8 +10,6 @@ import de.mm20.launcher2.calendar.CalendarRepository
 import de.mm20.launcher2.ktx.tryStartActivity
 import de.mm20.launcher2.search.CalendarEvent
 import de.mm20.launcher2.searchable.PinnedLevel
-import de.mm20.launcher2.searchable.SavableSearchableRepository
-import de.mm20.launcher2.searchable.VisibilityLevel
 import de.mm20.launcher2.services.favorites.FavoritesService
 import de.mm20.launcher2.widgets.CalendarWidget
 import de.mm20.launcher2.widgets.CalendarWidgetConfig
@@ -33,8 +30,6 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
 
     private val calendarRepository: CalendarRepository by inject()
     private val favoritesService: FavoritesService by inject()
-    private val searchableRepository: SavableSearchableRepository by inject()
-
     private val widgetConfig = MutableStateFlow(CalendarWidgetConfig())
 
     val calendarEvents = mutableStateOf<List<CalendarEvent>>(emptyList())
@@ -112,8 +107,9 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
 
 
     fun createEvent(context: Context) {
-        val intent = Intent(Intent.ACTION_EDIT)
-        intent.data = CalendarContract.Events.CONTENT_URI
+        val intent = Intent(Intent.ACTION_INSERT)
+            .setData(CalendarContract.Events.CONTENT_URI)
+            .setPackage("com.google.android.calendar")
         val zoneOffset = OffsetDateTime.now().offset
         val beginTime = selectedDate.value.atTime(12, 0).toInstant(zoneOffset).toEpochMilli()
         val endTime = selectedDate.value.atTime(13, 0).toInstant(zoneOffset).toEpochMilli()
@@ -187,15 +183,8 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                     .toEpochMilli(),
                 excludeAllDayEvents = !config.allDayEvents,
             ).collectLatest { events ->
-                searchableRepository.getKeys(
-                    includeTypes = listOf("calendar", "tasks.org", "plugin.calendar"),
-                    maxVisibility = VisibilityLevel.SearchOnly,
-                    limit = 9999,
-                ).collectLatest { hidden ->
-                    upcomingEvents = events
-                        .filter { !hidden.contains(it.key) }
-                        .sortedBy { it.startTime ?: it.endTime }
-                }
+                upcomingEvents = events
+                    .sortedBy { it.startTime ?: it.endTime }
             }
 
         }
