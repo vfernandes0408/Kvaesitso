@@ -180,6 +180,7 @@ internal class GoogleCalendarProvider(
             append("/events?singleEvents=true&orderBy=startTime&showDeleted=true&showHiddenInvitations=false")
             append("&timeMin=").append(timeMin)
             append("&timeMax=").append(timeMax)
+            append("&timeZone=").append(URLEncoder.encode(ZoneId.systemDefault().id, "UTF-8"))
             append("&maxResults=2500")
             query?.takeIf { it.isNotBlank() }?.let {
                 append("&q=").append(URLEncoder.encode(it, "UTF-8"))
@@ -256,12 +257,24 @@ internal class GoogleCalendarProvider(
             return try {
                 OffsetDateTime.parse(valueString).toInstant().toEpochMilli()
             } catch (_: Exception) {
-                null
+                try {
+                    java.time.LocalDateTime.parse(valueString)
+                        .atZone(
+                            value.optString("timeZone")
+                                .takeIf { it.isNotBlank() }
+                                ?.let(ZoneId::of)
+                                ?: ZoneId.systemDefault()
+                        )
+                        .toInstant()
+                        .toEpochMilli()
+                } catch (_: Exception) {
+                    null
+                }
             }
         }
 
-        return value.optString("date").takeIf { it.isNotBlank() }?.let { date ->
-            try {
+        value.optString("date").takeIf { it.isNotBlank() }?.let { date ->
+            return try {
                 LocalDate.parse(date)
                     .atStartOfDay(ZoneId.systemDefault())
                     .toInstant()
@@ -270,6 +283,8 @@ internal class GoogleCalendarProvider(
                 null
             }
         }
+
+        return null
     }
 
     private fun request(token: String, url: String): JSONObject? {
