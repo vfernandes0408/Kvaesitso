@@ -9,6 +9,4 @@ data class CalendarList(
     val color: Int,
     val types: List<CalendarListType>,
     val providerId: String,
-    /** Identifies the originating calendar source for UI-level filtering. */
-    val sourceId: String = providerId,
 )
