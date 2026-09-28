@@ -43,7 +43,7 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     val calendarEvents = mutableStateOf<List<CalendarEvent>>(emptyList())
     val pinnedCalendarEvents =
         favoritesService.getFavorites(
-            includeTypes = listOf("calendar", "tasks.org", "plugin.calendar"),
+            includeTypes = listOf("google.calendar"),
             minPinnedLevel = PinnedLevel.AutomaticallySorted,
         ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
     val nextEvents = mutableStateOf<List<CalendarEvent>>(emptyList())
