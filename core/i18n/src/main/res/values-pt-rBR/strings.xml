@@ -68,7 +68,6 @@
     <string name="websearch_dialog_custom_icon">Ícone personalizado</string>
     <string name="menu_edit_widgets">Editar widgets</string>
     <string name="widget_name_weather">Tempo</string>
-    <string name="widget_name_calendar">Calendário</string>
     <string name="widget_name_music">Música</string>
     <string name="widget_add_widget">Adicionar widget</string>
     <string name="shortcut_summary">De %1$s</string>
