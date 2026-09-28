@@ -1,10 +1,8 @@
 package de.mm20.launcher2.calendar
 
-import android.app.Activity
 import android.content.Context
 import de.mm20.launcher2.calendar.providers.AndroidCalendarProvider
 import de.mm20.launcher2.calendar.providers.CalendarList
-import de.mm20.launcher2.calendar.providers.GoogleCalendarProvider
 import de.mm20.launcher2.calendar.providers.CalendarProvider
 import de.mm20.launcher2.calendar.providers.PluginCalendarProvider
 import de.mm20.launcher2.calendar.providers.TasksCalendarProvider
@@ -36,14 +34,11 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
     fun findMany(
         from: Long = System.currentTimeMillis(),
         to: Long = from + 14 * 24 * 60 * 60 * 1000L,
+        excludeCalendars: List<String> = emptyList(),
+        excludeAllDayEvents: Boolean = false,
     ): Flow<ImmutableList<CalendarEvent>>
 
     fun getCalendars(providerId: String? = null): Flow<List<CalendarList>>
-
-    fun requestGoogleCalendarAuthorization(
-        activity: Activity,
-        onResult: (Boolean) -> Unit,
-    )
 }
 
 internal class CalendarRepositoryImpl(
@@ -97,13 +92,38 @@ internal class CalendarRepositoryImpl(
     override fun findMany(
         from: Long,
         to: Long,
+        excludeCalendars: List<String>,
+        excludeAllDayEvents: Boolean,
     ): Flow<ImmutableList<CalendarEvent>> {
-        return queryCalendarEvents(
-            intervalStart = from,
-            intervalEnd = to,
-            providers = listOf(GoogleCalendarProvider(context)),
-            allowNetwork = false,
-        ).debounce(500)
+        val hasCalendarPermission = permissionsManager.hasPermission(PermissionGroup.Calendar)
+        val hasTasksPermission = permissionsManager.hasPermission(PermissionGroup.Tasks)
+        val plugins = pluginRepository.findMany(
+            type = PluginType.Calendar,
+            enabled = true,
+        )
+        return combineTransform(hasCalendarPermission, hasTasksPermission, plugins) { calPerm, taskPerm, plugins ->
+            val providers = buildList {
+                if (calPerm) add(AndroidCalendarProvider(context)) else null
+                if (taskPerm) add(TasksCalendarProvider(context)) else null
+                addAll(
+                    plugins.map {
+                        PluginCalendarProvider(context, it.authority)
+                    }
+                )
+            }
+
+            emitAll(
+                queryCalendarEvents(
+                    query = null,
+                    intervalStart = from,
+                    intervalEnd = to,
+                    excludeAllDayEvents = excludeAllDayEvents,
+                    excludeCalendars = excludeCalendars,
+                    providers = providers,
+                    allowNetwork = false,
+                ).debounce(500)
+            )
+        }
     }
 
     private fun queryCalendarEvents(
@@ -138,13 +158,6 @@ internal class CalendarRepositoryImpl(
             }
             emitAll(result)
         }
-    }
-
-    override fun requestGoogleCalendarAuthorization(
-        activity: Activity,
-        onResult: (Boolean) -> Unit,
-    ) {
-        GoogleCalendarProvider(context).requestAuthorization(activity, onResult)
     }
 
     override fun getCalendars(providerId: String?): Flow<List<CalendarList>> {
