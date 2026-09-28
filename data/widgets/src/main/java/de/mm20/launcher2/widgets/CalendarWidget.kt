@@ -21,6 +21,8 @@ data class CalendarWidgetConfig(
     val excludedCalendarSources: List<String>? = listOf("google"),
     val completedTasks: Boolean = true,
     val upcomingEventsCount: Int = 3,
+    /** Width of the widget as a percentage of the available width. */
+    val widthPercent: Int = 100,
     val upcomingTaskCount: Int = 3,
 )
 data class CalendarWidget(
