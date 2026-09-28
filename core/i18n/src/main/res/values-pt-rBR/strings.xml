@@ -357,6 +357,7 @@
     <string name="preference_search_cloud_summary">Pesquisar arquivos de %1$s</string>
     <string name="preference_calendar_calendars">Calendários</string>
     <string name="calendar_source_google">Google Agenda</string>
+    <string name="calendar_source_widget_summary">Incluir esta fonte no widget de calendário</string>
     <string name="preference_screen_buildinfo_summary">Mais informações sobre esta compilação deste aplicativo</string>
     <string name="preference_screen_buildinfo">informações de compilação</string>
     <string name="preference_search_bar_style_summary">Personalize a aparência da barra de pesquisa</string>

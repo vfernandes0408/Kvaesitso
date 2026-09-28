@@ -35,6 +35,7 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
         from: Long = System.currentTimeMillis(),
         to: Long = from + 14 * 24 * 60 * 60 * 1000L,
         excludeCalendars: List<String> = emptyList(),
+        excludeCalendarSources: List<String> = emptyList(),
         excludeAllDayEvents: Boolean = false,
     ): Flow<ImmutableList<CalendarEvent>>
 
@@ -93,6 +94,7 @@ internal class CalendarRepositoryImpl(
         from: Long,
         to: Long,
         excludeCalendars: List<String>,
+        excludeCalendarSources: List<String>,
         excludeAllDayEvents: Boolean,
     ): Flow<ImmutableList<CalendarEvent>> {
         val hasCalendarPermission = permissionsManager.hasPermission(PermissionGroup.Calendar)
@@ -119,6 +121,7 @@ internal class CalendarRepositoryImpl(
                     intervalEnd = to,
                     excludeAllDayEvents = excludeAllDayEvents,
                     excludeCalendars = excludeCalendars,
+                    excludeCalendarSources = excludeCalendarSources,
                     providers = providers,
                     allowNetwork = false,
                 ).debounce(500)
@@ -132,6 +135,7 @@ internal class CalendarRepositoryImpl(
         intervalEnd: Long,
         excludeAllDayEvents: Boolean = false,
         excludeCalendars: List<String> = emptyList(),
+        excludeCalendarSources: List<String> = emptyList(),
         allowNetwork: Boolean = false,
         providers: List<CalendarProvider>,
     ): Flow<ImmutableList<CalendarEvent>> = flow {
@@ -148,6 +152,7 @@ internal class CalendarRepositoryImpl(
                             val (namespace, id) = it.split(":")
                             if (namespace == provider.namespace) id else null
                         },
+                        excludedSources = excludeCalendarSources,
                         excludeAllDayEvents = excludeAllDayEvents,
                         allowNetwork = allowNetwork,
                     )

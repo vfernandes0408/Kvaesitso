@@ -19,6 +19,7 @@ class AndroidCalendarProvider(
         from: Long,
         to: Long,
         excludedCalendars: List<String>,
+        excludedSources: List<String>,
         excludeAllDayEvents: Boolean,
         allowNetwork: Boolean
     ): List<CalendarEvent> {
@@ -40,9 +41,36 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.DESCRIPTION,
                 CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
             )
+            val excludedSourceCalendarIds = excludedSources
+                .filter { it.startsWith("android:") }
+                .map { it.removePrefix("android:") }
+                .distinct()
+                .let { accountTypes ->
+                    if (accountTypes.isEmpty()) {
+                        emptyList()
+                    } else {
+                        val placeholders = accountTypes.joinToString(",") { "?" }
+                        val calendarCursor = context.contentResolver.query(
+                            CalendarContract.Calendars.CONTENT_URI,
+                            arrayOf(CalendarContract.Calendars._ID),
+                            "${CalendarContract.Calendars.ACCOUNT_TYPE} IN ($placeholders)",
+                            accountTypes.toTypedArray(),
+                            null,
+                        )
+                        buildList {
+                            calendarCursor?.use {
+                                while (it.moveToNext()) {
+                                    add(it.getLong(0).toString())
+                                }
+                            }
+                        }
+                    }
+                }
+
+            val allExcludedCalendarIds = (excludedCalendars + excludedSourceCalendarIds).distinct()
             val selection = mutableListOf<String>()
             if (query != null) selection.add("${CalendarContract.Instances.TITLE} LIKE ?")
-            if (excludedCalendars.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${excludedCalendars.joinToString()})")
+            if (allExcludedCalendarIds.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${allExcludedCalendarIds.joinToString()})")
             if (excludeAllDayEvents) selection.add("${CalendarContract.Instances.ALL_DAY} = 0")
             val selArgs = if (query != null) arrayOf("%$query%") else null
             val sort = "${CalendarContract.Instances.BEGIN} ASC"

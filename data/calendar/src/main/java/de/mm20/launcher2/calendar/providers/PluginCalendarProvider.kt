@@ -32,9 +32,11 @@ class PluginCalendarProvider(
         from: Long,
         to: Long,
         excludedCalendars: List<String>,
+        excludedSources: List<String>,
         excludeAllDayEvents: Boolean,
         allowNetwork: Boolean
     ): List<CalendarEvent> {
+        if (excludedSources.contains(pluginAuthority)) return emptyList()
         return search(
             CalendarQuery(
                 query = query,

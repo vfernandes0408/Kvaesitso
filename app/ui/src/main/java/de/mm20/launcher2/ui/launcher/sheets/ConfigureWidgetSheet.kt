@@ -911,6 +911,9 @@ fun ColumnScope.ConfigureCalendarWidget(
         widget.config.excludedCalendarIds
             ?: widget.config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList()
     }
+    val excludedCalendarSources = remember(widget.config) {
+        widget.config.excludedCalendarSources.orEmpty()
+    }
 
     val groups = remember(calendars) {
         calendars?.groupBy { it.sourceId }?.entries
@@ -924,7 +927,7 @@ fun ColumnScope.ConfigureCalendarWidget(
                         context.getString(R.string.preference_calendar_calendars)
                     group.key == "tasks.org" ->
                         context.getString(R.string.preference_search_tasks)
-                    group.key == "android:com.google" ->
+                    group.key.startsWith("android:com.google") ->
                         context.getString(R.string.calendar_source_google)
                     group.key.startsWith("android:") ->
                         group.key.removePrefix("android:")
@@ -942,9 +945,7 @@ fun ColumnScope.ConfigureCalendarWidget(
             val calendarIds = remember(group.value) {
                 group.value.map { it.id }
             }
-            val allSelected = remember(excludedCalendars, calendarIds) {
-                calendarIds.isNotEmpty() && calendarIds.none(excludedCalendars::contains)
-            }
+            val sourceEnabled = !excludedCalendarSources.contains(group.key)
 
             OutlinedCard {
                 Column(
@@ -952,16 +953,17 @@ fun ColumnScope.ConfigureCalendarWidget(
                 ) {
                     CheckboxPreference(
                         title = sourceName,
+                        summary = stringResource(R.string.calendar_source_widget_summary),
                         iconPadding = false,
-                        value = allSelected,
+                        value = sourceEnabled,
                         onValueChanged = { enabled ->
                             onWidgetUpdated(
                                 widget.copy(
                                     config = widget.config.copy(
-                                        excludedCalendarIds = if (enabled) {
-                                            excludedCalendars - calendarIds.toSet()
+                                        excludedCalendarSources = if (enabled) {
+                                            excludedCalendarSources - group.key
                                         } else {
-                                            excludedCalendars + calendarIds
+                                            excludedCalendarSources + group.key
                                         }
                                     )
                                 )
@@ -977,7 +979,8 @@ fun ColumnScope.ConfigureCalendarWidget(
                             title = calendar.name,
                             summary = calendar.owner,
                             iconPadding = false,
-                            value = !excludedCalendars.contains(calendar.id),
+                            value = sourceEnabled && !excludedCalendars.contains(calendar.id),
+                            enabled = sourceEnabled,
                             onValueChanged = {
                                 onWidgetUpdated(
                                     widget.copy(

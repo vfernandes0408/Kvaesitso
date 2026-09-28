@@ -8,6 +8,7 @@ internal interface CalendarProvider {
         from: Long = System.currentTimeMillis(),
         to: Long = from + 14 * 24 * 60 * 60 * 1000L,
         excludedCalendars: List<String> = emptyList(),
+        excludedSources: List<String> = emptyList(),
         excludeAllDayEvents: Boolean = false,
         allowNetwork: Boolean = false,
     ): List<CalendarEvent>
