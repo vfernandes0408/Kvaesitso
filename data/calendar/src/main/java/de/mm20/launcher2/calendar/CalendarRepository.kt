@@ -37,9 +37,7 @@ interface CalendarRepository : SearchableRepository<CalendarEvent> {
         from: Long = System.currentTimeMillis(),
         to: Long = from + 14 * 24 * 60 * 60 * 1000L,
         excludeCalendars: List<String> = emptyList(),
-        excludeCalendarSources: List<String> = emptyList(),
         excludeAllDayEvents: Boolean = false,
-        onlyGoogleCalendar: Boolean = false,
     ): Flow<ImmutableList<CalendarEvent>>
 
     fun getCalendars(providerId: String? = null): Flow<List<CalendarList>>
@@ -102,45 +100,28 @@ internal class CalendarRepositoryImpl(
         from: Long,
         to: Long,
         excludeCalendars: List<String>,
-        excludeCalendarSources: List<String>,
         excludeAllDayEvents: Boolean,
-        onlyGoogleCalendar: Boolean,
     ): Flow<ImmutableList<CalendarEvent>> {
-        val hasCalendarPermission = permissionsManager.hasPermission(PermissionGroup.Calendar)
-        val hasTasksPermission = permissionsManager.hasPermission(PermissionGroup.Tasks)
-        val plugins = pluginRepository.findMany(
-            type = PluginType.Calendar,
-            enabled = true,
+        return emitGoogleCalendarEvents(
+            from = from,
+            to = to,
+            excludeAllDayEvents = excludeAllDayEvents,
         )
-        return combineTransform(hasCalendarPermission, hasTasksPermission, plugins) { calPerm, taskPerm, plugins ->
-            val providers = if (onlyGoogleCalendar) {
-                listOf<CalendarProvider>(GoogleCalendarProvider(context))
-            } else {
-                buildList {
-                    if (calPerm) add(AndroidCalendarProvider(context)) else null
-                    add(GoogleCalendarProvider(context))
-                    if (taskPerm) add(TasksCalendarProvider(context)) else null
-                    addAll(
-                        plugins.map {
-                            PluginCalendarProvider(context, it.authority)
-                        }
-                    )
-                }
-            }
+    }
 
-            emitAll(
-                queryCalendarEvents(
-                    query = null,
-                    intervalStart = from,
-                    intervalEnd = to,
-                    excludeAllDayEvents = excludeAllDayEvents,
-                    excludeCalendars = excludeCalendars,
-                    excludeCalendarSources = excludeCalendarSources,
-                    providers = providers,
-                    allowNetwork = false,
-                ).debounce(500)
-            )
-        }
+    private fun emitGoogleCalendarEvents(
+        from: Long,
+        to: Long,
+        excludeAllDayEvents: Boolean,
+    ): Flow<ImmutableList<CalendarEvent>> {
+        return queryCalendarEvents(
+            query = null,
+            intervalStart = from,
+            intervalEnd = to,
+            excludeAllDayEvents = excludeAllDayEvents,
+            providers = listOf(GoogleCalendarProvider(context)),
+            allowNetwork = false,
+        ).debounce(500)
     }
 
     private fun queryCalendarEvents(
@@ -149,7 +130,6 @@ internal class CalendarRepositoryImpl(
         intervalEnd: Long,
         excludeAllDayEvents: Boolean = false,
         excludeCalendars: List<String> = emptyList(),
-        excludeCalendarSources: List<String> = emptyList(),
         allowNetwork: Boolean = false,
         providers: List<CalendarProvider>,
     ): Flow<ImmutableList<CalendarEvent>> = flow {
@@ -166,7 +146,6 @@ internal class CalendarRepositoryImpl(
                             val (namespace, id) = it.split(":")
                             if (namespace == provider.namespace) id else null
                         },
-                        excludedSources = excludeCalendarSources,
                         excludeAllDayEvents = excludeAllDayEvents,
                         allowNetwork = allowNetwork,
                     )
@@ -222,7 +201,6 @@ internal class CalendarRepositoryImpl(
             ) { calPerm, tasksPerm, plugins ->
                 buildList {
                     if (calPerm) add(AndroidCalendarProvider(context))
-                    add(GoogleCalendarProvider(context))
                     if (tasksPerm) add(TasksCalendarProvider(context))
                     addAll(plugins.map { PluginCalendarProvider(context, it.authority) })
                 }
