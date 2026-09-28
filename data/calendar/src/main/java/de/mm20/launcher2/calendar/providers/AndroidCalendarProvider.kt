@@ -9,7 +9,6 @@ import de.mm20.launcher2.search.CalendarEvent
 import de.mm20.launcher2.search.calendar.CalendarListType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Calendar
 
 class AndroidCalendarProvider(
     private val context: Context,
@@ -77,6 +76,7 @@ class AndroidCalendarProvider(
 
             // The Android Calendar Provider may keep stale rows until synchronization catches up.
             // Never expose cancelled events or events declined by the current user.
+            selection.add("(${CalendarContract.Instances.DELETED} IS NULL OR ${CalendarContract.Instances.DELETED} != 1)")
             selection.add("${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}")
             selection.add("(${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED})")
 
@@ -113,17 +113,35 @@ class AndroidCalendarProvider(
                 val allday = cursor.getInt(4) > 0
                 val begin = cursor.getLong(2)
 
-                val tzOffset = if (allday) {
-                    Calendar.getInstance().timeZone.getOffset(begin)
+                val startTime: Long
+                val endTime: Long
+                if (allday) {
+                    val startDate = java.time.Instant.ofEpochMilli(begin)
+                        .atOffset(java.time.ZoneOffset.UTC)
+                        .toLocalDate()
+                    val endDate = java.time.Instant.ofEpochMilli(cursor.getLong(3))
+                        .atOffset(java.time.ZoneOffset.UTC)
+                        .toLocalDate()
+
+                    startTime = startDate
+                        .atStartOfDay(java.time.ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+                    endTime = endDate
+                        .atStartOfDay(java.time.ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli() - 1L
                 } else {
-                    0
+                    startTime = begin
+                    endTime = cursor.getLong(3)
                 }
+
                 val event = AndroidCalendarEvent(
                     label = cursor.getStringOrNull(1) ?: continue,
                     id = cursor.getLong(0),
                     color = cursor.getInt(5),
-                    startTime = begin - tzOffset,
-                    endTime = cursor.getLong(3) - tzOffset - if (allday) 1 else 0,
+                    startTime = startTime,
+                    endTime = endTime,
                     allDay = allday,
                     location = cursor.getStringOrNull(6) ?: "",
                     attendees = attendees,
@@ -158,7 +176,15 @@ class AndroidCalendarProvider(
             CalendarContract.Instances.DESCRIPTION,
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
         )
-        val selection = CalendarContract.Instances.EVENT_ID + " = ?"
+        val selection = """
+            ${CalendarContract.Instances.EVENT_ID} = ?
+            AND (${CalendarContract.Instances.DELETED} IS NULL OR ${CalendarContract.Instances.DELETED} != 1)
+            AND ${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}
+            AND (
+                ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL
+                OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED}
+            )
+        """.trimIndent()
         val selArgs = arrayOf(id.toString())
         val cursor = context.contentResolver.query(uri, projection, selection, selArgs, null)
             ?: return@withContext null
@@ -193,17 +219,35 @@ class AndroidCalendarProvider(
                 )
             }
             cur.close()
-            val tzOffset = if (allday) {
-                Calendar.getInstance().timeZone.getOffset(begin)
+            val startTime: Long
+            val endTime: Long
+            if (allday) {
+                val startDate = java.time.Instant.ofEpochMilli(begin)
+                    .atOffset(java.time.ZoneOffset.UTC)
+                    .toLocalDate()
+                val endDate = java.time.Instant.ofEpochMilli(end)
+                    .atOffset(java.time.ZoneOffset.UTC)
+                    .toLocalDate()
+
+                startTime = startDate
+                    .atStartOfDay(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+                endTime = endDate
+                    .atStartOfDay(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli() - 1L
             } else {
-                0
+                startTime = begin
+                endTime = end
             }
+
             return@withContext AndroidCalendarEvent(
                 label = title,
                 id = id,
                 color = color,
-                startTime = begin - tzOffset,
-                endTime = end - tzOffset - if (allday) 1 else 0,
+                startTime = startTime,
+                endTime = endTime,
                 allDay = allday,
                 location = location ?: "",
                 attendees = attendees,
