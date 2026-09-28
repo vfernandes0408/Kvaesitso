@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
@@ -88,7 +89,10 @@ import de.mm20.launcher2.data.customattrs.CustomAttributesRepository
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.permissions.PermissionGroup
 import de.mm20.launcher2.permissions.PermissionsManager
+import de.mm20.launcher2.plugin.PluginRepository
+import de.mm20.launcher2.plugin.PluginType
 import de.mm20.launcher2.search.Tag
+import de.mm20.launcher2.search.calendar.CalendarListType
 import de.mm20.launcher2.themes.colors.atTone
 import de.mm20.launcher2.ui.R
 import de.mm20.launcher2.ui.base.LocalAppWidgetHost
@@ -99,6 +103,7 @@ import de.mm20.launcher2.ui.component.MissingPermissionBanner
 import de.mm20.launcher2.ui.component.dragndrop.DraggableItem
 import de.mm20.launcher2.ui.component.dragndrop.LazyDragAndDropColumn
 import de.mm20.launcher2.ui.component.dragndrop.rememberLazyDragAndDropListState
+import de.mm20.launcher2.ui.component.preferences.CheckboxPreference
 import de.mm20.launcher2.ui.component.preferences.Preference
 import de.mm20.launcher2.ui.component.preferences.SliderPreference
 import de.mm20.launcher2.ui.component.preferences.SwitchPreference
@@ -863,54 +868,149 @@ fun ColumnScope.ConfigureCalendarWidget(
     onWidgetUpdated: (CalendarWidget) -> Unit
 ) {
     val calendarRepository: CalendarRepository = koinInject()
-    val context = LocalContext.current as AppCompatActivity
+    val permissionsManager: PermissionsManager = koinInject()
+    val pluginRepository: PluginRepository = koinInject()
+    val calendars by remember {
+        calendarRepository.getCalendars().map {
+            it.sortedBy { it.name }
+        }
+    }.collectAsState(null)
+    val plugins by remember {
+        pluginRepository.findMany(
+            type = PluginType.Calendar,
+            enabled = true,
+        )
+    }.collectAsState(emptyList())
 
-    OutlinedCard {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Preference(
-                title = { Text(stringResource(R.string.calendar_source_google)) },
-                summary = {
-                    Text(stringResource(R.string.calendar_source_widget_summary))
-                },
-                onClick = {
-                    calendarRepository.requestGoogleCalendarAuthorization(context) {
-                        // Authorization is handled by the Google account manager.
+    val hasPermission by remember {
+        permissionsManager.hasPermission(PermissionGroup.Calendar)
+    }.collectAsState(true)
+
+    val hasTasks = remember(calendars) {
+        calendars?.any { it.types.contains(CalendarListType.Tasks) } == true
+    }
+
+    if (hasTasks) {
+        OutlinedCard {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                SwitchPreference(
+                    title = stringResource(R.string.preference_calendar_hide_completed),
+                    iconPadding = false,
+                    value = !widget.config.completedTasks,
+                    onValueChanged = {
+                        onWidgetUpdated(widget.copy(config = widget.config.copy(completedTasks = !it)))
+                    }
+                )
+            }
+        }
+    }
+    val context = LocalLifecycleOwner.current as AppCompatActivity
+    val excludedCalendars = remember(widget.config) {
+        widget.config.excludedCalendarIds
+            ?: widget.config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList()
+    }
+
+    val groups = remember(calendars) {
+        calendars?.groupBy { it.providerId }?.entries
+    }
+
+    if (groups?.isNotEmpty() == true) {
+        for (group in groups) {
+            val pluginName = remember(plugins, group.key) {
+                if (group.key == "local") context.getString(R.string.preference_calendar_calendars)
+                else if (group.key == "tasks.org") context.getString(R.string.preference_search_tasks)
+                else plugins.find { it.authority == group.key }?.label
+            }
+            if (pluginName != null) {
+                Text(
+                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    text = pluginName
+                )
+            }
+            OutlinedCard {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    for ((i, calendar) in group.value.withIndex()) {
+                        if (i > 0) HorizontalDivider()
+                        CheckboxPreference(
+                            title = calendar.name,
+                            summary = calendar.owner,
+                            iconPadding = false,
+                            value = !excludedCalendars.contains(calendar.id),
+                            onValueChanged = {
+                                onWidgetUpdated(
+                                    widget.copy(
+                                        config = widget.config.copy(
+                                            excludedCalendarIds = if (it) {
+                                                excludedCalendars - calendar.id
+                                            } else {
+                                                excludedCalendars + calendar.id
+                                            }
+                                        )
+                                    )
+                                )
+                            },
+                            checkboxColors = CheckboxDefaults.colors(
+                                checkedColor = if (calendar.color == 0) MaterialTheme.colorScheme.primary
+                                else Color(
+                                    calendar.color.atTone(if (LocalDarkTheme.current) 80 else 40)
+                                ),
+                                checkmarkColor = if (calendar.color == 0) MaterialTheme.colorScheme.onPrimary
+                                else Color(
+                                    calendar.color.atTone(if (LocalDarkTheme.current) 20 else 100)
+                                )
+                            )
+                        )
                     }
                 }
-            )
-            HorizontalDivider()
-            SliderPreference(
-                title = stringResource(R.string.calendar_widget_width),
-                value = widget.config.widthPercent.coerceIn(30, 100),
-                min = 30,
-                max = 100,
-                step = 5,
-                onValueChanged = {
-                    onWidgetUpdated(
-                        widget.copy(
-                            config = widget.config.copy(widthPercent = it)
-                        )
+            }
+        }
+    } else if (!hasPermission) {
+        MissingPermissionBanner(
+            modifier = Modifier.padding(8.dp),
+            text = stringResource(R.string.missing_permission_calendar_widget_settings),
+            onClick = { permissionsManager.requestPermission(context, PermissionGroup.Calendar) },
+        )
+    } else if (calendars != null) {
+        Text(
+            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = stringResource(R.string.widget_config_calendar_no_calendars)
+        )
+    }
+    if (hasPermission) {
+        val colorScheme = MaterialTheme.colorScheme
+        TextButton(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .align(Alignment.CenterHorizontally),
+            contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+            onClick = {
+                CustomTabsIntent.Builder()
+                    .setDefaultColorSchemeParams(
+                        CustomTabColorSchemeParams.Builder()
+                            .setToolbarColor(colorScheme.primaryContainer.toArgb())
+                            .setSecondaryToolbarColor(colorScheme.secondaryContainer.toArgb())
+                            .build()
                     )
-                }
-            )
-            HorizontalDivider()
-            SliderPreference(
-                title = stringResource(R.string.calendar_widget_upcoming_events_count),
-                iconPadding = false,
-                value = widget.config.upcomingEventsCount,
-                min = 1,
-                max = 10,
-                step = 1,
-                onValueChanged = {
-                    onWidgetUpdated(
-                        widget.copy(
-                            config = widget.config.copy(upcomingEventsCount = it)
-                        )
+                    .build().launchUrl(
+                        context,
+                        Uri.parse("https://kvaesitso.mm20.de/docs/user-guide/widgets/calendar-widget#my-calendars-dont-show-up")
                     )
-                }
+            }) {
+            Icon(
+                modifier = Modifier
+                    .padding(end = ButtonDefaults.IconSpacing)
+                    .requiredSize(ButtonDefaults.IconSize),
+                painter = painterResource(R.drawable.help_20px), contentDescription = null
             )
+            Text(stringResource(R.string.widget_config_calendar_missing_calendars_hint))
         }
     }
 }
