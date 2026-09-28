@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Base64
 import de.mm20.launcher2.search.CalendarEvent
-import de.mm20.launcher2.search.calendar.CalendarListType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -34,15 +33,11 @@ internal class GoogleCalendarProvider(
         from: Long,
         to: Long,
         excludedCalendars: List<String>,
-        excludedSources: List<String>,
         excludeAllDayEvents: Boolean,
         allowNetwork: Boolean
     ): List<CalendarEvent> = withContext(Dispatchers.IO) {
-        if (excludedSources.contains(SOURCE_ID)) return@withContext emptyList()
         if (!isAvailable(context)) return@withContext emptyList()
 
-        val excluded = excludedCalendars.toSet()
-        if (excluded.contains(SOURCE_CALENDAR_ID)) return@withContext emptyList()
         val results = mutableListOf<GoogleCalendarEvent>()
 
         for (account in googleAccounts()) {
@@ -51,9 +46,6 @@ internal class GoogleCalendarProvider(
 
             for (calendar in calendars) {
                 val calendarId = calendar.optString("id").takeIf { it.isNotBlank() } ?: continue
-                val stableCalendarId = encodeCalendarId(account, calendarId)
-                if (excluded.contains(stableCalendarId)) continue
-
                 fetchEvents(
                     token = token,
                     calendarId = calendarId,
@@ -77,21 +69,7 @@ internal class GoogleCalendarProvider(
         results.sortedBy { it.startTime ?: it.endTime }
     }
 
-    override suspend fun getCalendarLists(): List<CalendarList> = withContext(Dispatchers.IO) {
-        if (!isAvailable(context)) return@withContext emptyList()
-
-        listOf(
-            CalendarList(
-                id = "google:source",
-                name = "Google Agenda",
-                owner = null,
-                color = 0,
-                types = listOf(CalendarListType.Calendar),
-                providerId = NAMESPACE,
-                sourceId = SOURCE_ID,
-            )
-        )
-    }
+    override suspend fun getCalendarLists(): List<CalendarList> = emptyList()
 
     fun requestAuthorization(
         activity: Activity,
@@ -320,10 +298,7 @@ internal class GoogleCalendarProvider(
 
     companion object {
         const val NAMESPACE = "google"
-        const val SOURCE_ID = "google"
         const val GOOGLE_CALENDAR_PACKAGE = "com.google.android.calendar"
-        private const val SOURCE_CALENDAR_ID = "source"
-
         private const val GOOGLE_ACCOUNT_TYPE = "com.google"
         private const val AUTH_TOKEN_TYPE =
             "oauth2:https://www.googleapis.com/auth/calendar.readonly"
