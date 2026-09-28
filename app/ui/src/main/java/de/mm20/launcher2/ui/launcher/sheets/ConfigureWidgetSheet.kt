@@ -927,6 +927,8 @@ fun ColumnScope.ConfigureCalendarWidget(
                         context.getString(R.string.preference_calendar_calendars)
                     group.key == "tasks.org" ->
                         context.getString(R.string.preference_search_tasks)
+                    group.key == "google" ->
+                        context.getString(R.string.calendar_source_google)
                     group.key.startsWith("android:com.google") ->
                         context.getString(R.string.calendar_source_google)
                     group.key.startsWith("android:") ->
