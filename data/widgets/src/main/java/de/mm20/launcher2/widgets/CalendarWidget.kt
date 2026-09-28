@@ -18,7 +18,7 @@ data class CalendarWidgetConfig(
     val excludedCalendarIds: List<String>? = null,
     /** Calendar sources disabled for this widget, independent of individual calendar IDs. */
     @SerialName("excludedCalendarSources")
-    val excludedCalendarSources: List<String>? = listOf("google", "android:com.google"),
+    val excludedCalendarSources: List<String>? = listOf("google"),
     val completedTasks: Boolean = true,
     val upcomingEventsCount: Int = 3,
     val upcomingTaskCount: Int = 3,
