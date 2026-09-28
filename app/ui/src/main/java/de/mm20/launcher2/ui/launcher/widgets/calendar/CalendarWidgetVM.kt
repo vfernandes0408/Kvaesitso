@@ -152,9 +152,9 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     private fun updateEvents() {
         val date = selectedDate.value ?: return
         val now = System.currentTimeMillis()
-        val offset = OffsetDateTime.now().offset
-        val dayStart = max(now, date.atStartOfDay().toEpochSecond(offset) * 1000)
-        val dayEnd = date.plusDays(1).atStartOfDay().toEpochSecond(offset) * 1000
+        val zone = ZoneId.systemDefault()
+        val dayStart = max(now, date.atStartOfDay(zone).toInstant().toEpochMilli())
+        val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         var events = upcomingEvents.filter {
             if (it.isTask && it.isCompleted == true) {
                 it.endTime >= dayStart && it.endTime < dayEnd
@@ -163,8 +163,8 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
             }
         }
 
-        val startOfDay = date.atStartOfDay().toEpochSecond(offset) * 1000
-        val startOfNextDay = date.atStartOfDay().plusDays(1).toEpochSecond(offset) * 1000
+        val startOfDay = date.atStartOfDay(zone).toInstant().toEpochMilli()
+        val startOfNextDay = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
 
         if (!showRunningPastDayEvents) {
             val totalCount = events.size
