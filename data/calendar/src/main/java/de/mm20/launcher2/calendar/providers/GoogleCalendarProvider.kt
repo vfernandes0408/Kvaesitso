@@ -2,8 +2,11 @@ package de.mm20.launcher2.calendar.providers
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
 import de.mm20.launcher2.search.CalendarEvent
 import de.mm20.launcher2.search.calendar.CalendarListType
@@ -85,6 +88,33 @@ internal class GoogleCalendarProvider(
                 providerId = NAMESPACE,
                 sourceId = SOURCE_ID,
             )
+        )
+    }
+
+    fun requestAuthorization(
+        activity: Activity,
+        onResult: (Boolean) -> Unit,
+    ) {
+        val account = googleAccounts().firstOrNull()
+        if (account == null) {
+            onResult(false)
+            return
+        }
+
+        AccountManager.get(context).getAuthToken(
+            account,
+            AUTH_TOKEN_TYPE,
+            Bundle(),
+            activity,
+            { future ->
+                try {
+                    val token = future.result?.getString(AccountManager.KEY_AUTHTOKEN)
+                    onResult(!token.isNullOrBlank())
+                } catch (_: Exception) {
+                    onResult(false)
+                }
+            },
+            Handler(Looper.getMainLooper()),
         )
     }
 
