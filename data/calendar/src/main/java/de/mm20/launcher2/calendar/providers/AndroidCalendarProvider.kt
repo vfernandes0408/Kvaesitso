@@ -40,6 +40,8 @@ class AndroidCalendarProvider(
                 CalendarContract.Instances.CALENDAR_ID,
                 CalendarContract.Instances.DESCRIPTION,
                 CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
+                CalendarContract.Instances.STATUS,
+                CalendarContract.Instances.SELF_ATTENDEE_STATUS,
             )
             val excludedSourceCalendarIds = excludedSources
                 .filter { it.startsWith("android:") }
@@ -72,6 +74,12 @@ class AndroidCalendarProvider(
             if (query != null) selection.add("${CalendarContract.Instances.TITLE} LIKE ?")
             if (allExcludedCalendarIds.isNotEmpty()) selection.add("${CalendarContract.Instances.CALENDAR_ID} NOT IN (${allExcludedCalendarIds.joinToString()})")
             if (excludeAllDayEvents) selection.add("${CalendarContract.Instances.ALL_DAY} = 0")
+
+            // The Android Calendar Provider may keep stale rows until synchronization catches up.
+            // Never expose cancelled events or events declined by the current user.
+            selection.add("${CalendarContract.Instances.STATUS} != ${CalendarContract.Instances.STATUS_CANCELED}")
+            selection.add("${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED}")
+
             val selArgs = if (query != null) arrayOf("%$query%") else null
             val sort = "${CalendarContract.Instances.BEGIN} ASC"
             val cursor = context.contentResolver.query(
