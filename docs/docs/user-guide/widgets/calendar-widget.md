@@ -5,7 +5,7 @@ Display Google Calendar events in the widget. Tap 'Edit widgets', then tap the
 
 The widget always uses Google Calendar and does not provide individual calendar selection.
 You can configure the widget width from 30% to 100% of the available width, with 100% as the default.
-The number of upcoming events can be configured from 1 to 10. There is also an option to hide all-day events.
+The number of upcoming events can be configured from 1 to 10.
 
 ## My calendars don't show up!
 
