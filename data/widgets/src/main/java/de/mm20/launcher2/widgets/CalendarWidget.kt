@@ -16,9 +16,6 @@ data class CalendarWidgetConfig(
     val legacyExcludedCalendarIds: List<Long>? = null,
     @SerialName("excludedCalendars")
     val excludedCalendarIds: List<String>? = null,
-    /** Calendar sources disabled for this widget, independent of individual calendar IDs. */
-    @SerialName("excludedCalendarSources")
-    val excludedCalendarSources: List<String>? = listOf("google"),
     val completedTasks: Boolean = true,
     val upcomingEventsCount: Int = 3,
     /** Width of the widget as a percentage of the available width. */
