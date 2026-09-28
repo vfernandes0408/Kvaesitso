@@ -213,7 +213,8 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
                 excludeAllDayEvents = !config.allDayEvents,
                 excludeCalendars = config.excludedCalendarIds
                     ?: config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList(),
-                excludeCalendarSources = config.excludedCalendarSources.orEmpty(),
+                excludeCalendarSources = config.excludedCalendarSources
+                    ?: listOf("google"),
             ).collectLatest { events ->
                 searchableRepository.getKeys(
                     includeTypes = listOf("calendar", "tasks.org", "plugin.calendar"),
