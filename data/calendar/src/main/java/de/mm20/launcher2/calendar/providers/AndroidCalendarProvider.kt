@@ -96,7 +96,30 @@ class AndroidCalendarProvider(
             )
             val s = "${CalendarContract.Attendees.ATTENDEE_NAME} COLLATE NOCASE ASC"
             while (cursor.moveToNext()) {
-                val sel = "${CalendarContract.Attendees.EVENT_ID} = ${cursor.getLong(0)}"
+                val eventId = cursor.getLong(0)
+
+                // Instances can lag behind the source Events row. Validate the
+                // original event before displaying the occurrence.
+                val eventSelection = """
+                    ${CalendarContract.Events._ID} = ?
+                    AND (${CalendarContract.Events.DELETED} IS NULL OR ${CalendarContract.Events.DELETED} != 1)
+                    AND ${CalendarContract.Events.STATUS} != ${CalendarContract.Events.STATUS_CANCELED}
+                """.trimIndent()
+                val eventCursor = context.contentResolver.query(
+                    CalendarContract.Events.CONTENT_URI,
+                    arrayOf(
+                        CalendarContract.Events._ID,
+                        CalendarContract.Events.STATUS,
+                        CalendarContract.Events.DELETED,
+                    ),
+                    eventSelection,
+                    arrayOf(eventId.toString()),
+                    null,
+                )
+                val eventExists = eventCursor?.use { it.moveToFirst() } == true
+                if (!eventExists) continue
+
+                val sel = "${CalendarContract.Attendees.EVENT_ID} = $eventId"
                 val cur = context.contentResolver.query(
                     CalendarContract.Attendees.CONTENT_URI,
                     proj, sel, null, s
