@@ -887,6 +887,22 @@ fun ColumnScope.ConfigureCalendarWidget(
             )
             HorizontalDivider()
             SliderPreference(
+                title = stringResource(R.string.calendar_widget_width),
+                iconPadding = false,
+                value = widget.config.widthPercent.coerceIn(30, 100),
+                min = 30,
+                max = 100,
+                step = 5,
+                onValueChanged = {
+                    onWidgetUpdated(
+                        widget.copy(
+                            config = widget.config.copy(widthPercent = it)
+                        )
+                    )
+                }
+            )
+            HorizontalDivider()
+            SliderPreference(
                 title = stringResource(R.string.calendar_widget_upcoming_events_count),
                 iconPadding = false,
                 value = widget.config.upcomingEventsCount,
