@@ -64,18 +64,15 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
     fun updateWidget(widget: CalendarWidget) {
         val config = widget.config
         val migratedSources = config.excludedCalendarSources?.let { sources ->
-            // Versions of this change temporarily stored android:com.google as
-            // excluded by default. Migrate that generated value so synchronized
-            // Google calendars can appear again.
-            if (
-                sources.size == 2 &&
-                sources.contains("google") &&
-                sources.contains("android:com.google")
-            ) {
-                listOf("google")
-            } else {
-                sources
-            }
+            sources
+                .map {
+                    if (it == "android:com.google") {
+                        "android:com.google.android.calendar"
+                    } else {
+                        it
+                    }
+                }
+                .distinct()
         }
 
         widgetConfig.value = if (migratedSources == config.excludedCalendarSources) {
