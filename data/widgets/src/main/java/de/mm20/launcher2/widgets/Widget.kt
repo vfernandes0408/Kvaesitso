@@ -40,12 +40,7 @@ sealed class Widget {
                     Json.decodeFromStringOrNull(entity.config?.takeIf { it.isNotBlank() })
                         ?: MusicWidgetConfig(),
                 )
-                CalendarWidget.Type -> {
-                    val config: CalendarWidgetConfig =
-                        Json.decodeFromStringOrNull(entity.config?.takeIf { it.isNotBlank() })
-                            ?: CalendarWidgetConfig()
-                    CalendarWidget(entity.id, config)
-                }
+                
                 AppsWidget.Type -> {
                     val config: FavoritesWidgetConfig =
                         Json.decodeFromStringOrNull(entity.config?.takeIf { it.isNotBlank() })
