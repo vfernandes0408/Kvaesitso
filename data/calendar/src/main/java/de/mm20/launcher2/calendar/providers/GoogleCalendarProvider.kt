@@ -321,7 +321,7 @@ internal class GoogleCalendarProvider(
     companion object {
         const val NAMESPACE = "google"
         const val SOURCE_ID = "google"
-        const val GOOGLE_CALENDAR_PACKAGE = GOOGLE_CALENDAR_PACKAGE
+        const val GOOGLE_CALENDAR_PACKAGE = "com.google.android.calendar"
         private const val SOURCE_CALENDAR_ID = "source"
 
         private const val GOOGLE_ACCOUNT_TYPE = "com.google"
