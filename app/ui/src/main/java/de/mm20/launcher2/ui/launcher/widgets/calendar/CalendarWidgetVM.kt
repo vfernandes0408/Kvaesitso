@@ -211,8 +211,15 @@ class CalendarWidgetVM : ViewModel(), KoinComponent {
         selectDate(LocalDate.now())
         widgetConfig.collectLatest { config ->
             calendarRepository.findMany(
-                from = System.currentTimeMillis(),
-                to = System.currentTimeMillis() + 14 * 24 * 60 * 60 * 1000L,
+                from = LocalDate.now()
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli(),
+                to = LocalDate.now()
+                    .plusDays(14)
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli(),
                 excludeAllDayEvents = !config.allDayEvents,
                 excludeCalendars = config.excludedCalendarIds
                     ?: config.legacyExcludedCalendarIds?.map { "local:$it" } ?: emptyList(),
